@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	<RootNamespace>Rebels.Temporal</RootNamespace>
+	<AssemblyName>Rebels.Temporal</AssemblyName>
+    <Version>0.0.1-rc</Version>
+  </PropertyGroup>
+
+</Project>
