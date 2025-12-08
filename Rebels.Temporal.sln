@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E8D8D861-9569-446C-9CCE-7822C23F1158}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DAB7B470-31F1-406E-A684-F853C29B1514}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1FAF53CC-0935-44B4-97BA-3F617A5FB4D3}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		LICENSE = LICENSE
+		NOTICE = NOTICE
+		Rebels.Temporal.nuspec = Rebels.Temporal.nuspec
+		.template.config\template.json = .template.config\template.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{CA412747-27A2-4E6D-96CD-CBE6B055199C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{258B96D0-3669-458D-B9CF-746223299E99}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflow", "workflow", "{41075CC7-5AB4-4656-BB0A-6B22C597354E}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\dotnet-library-build.yml = .github\workflows\dotnet-library-build.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rebels.Temporal", "src\Rebels.Temporal\Rebels.Temporal.csproj", "{89E25979-9360-41CA-829A-DB219257154F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rebels.Temporal.Tests", "tests\Rebels.Temporal.Tests\Rebels.Temporal.Tests.csproj", "{276428D0-9DDB-48BF-99C3-F3A3608446D3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{89E25979-9360-41CA-829A-DB219257154F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89E25979-9360-41CA-829A-DB219257154F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89E25979-9360-41CA-829A-DB219257154F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89E25979-9360-41CA-829A-DB219257154F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{276428D0-9DDB-48BF-99C3-F3A3608446D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{276428D0-9DDB-48BF-99C3-F3A3608446D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{276428D0-9DDB-48BF-99C3-F3A3608446D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{276428D0-9DDB-48BF-99C3-F3A3608446D3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{41075CC7-5AB4-4656-BB0A-6B22C597354E} = {CA412747-27A2-4E6D-96CD-CBE6B055199C}
+		{89E25979-9360-41CA-829A-DB219257154F} = {E8D8D861-9569-446C-9CCE-7822C23F1158}
+		{276428D0-9DDB-48BF-99C3-F3A3608446D3} = {DAB7B470-31F1-406E-A684-F853C29B1514}
+	EndGlobalSection
+EndGlobal

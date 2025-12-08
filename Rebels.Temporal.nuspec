@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Rebels.Temporal</id>
+    <version>1.0.0</version>
+    <authors>Rebels Software sp. z o.o.</authors>
+    <description>.NET 8 class library template</description>
+    <projectUrl>https://github.com/rebels-software/csharp-opensource-class-library-template</projectUrl>
+    <repository type="git" url="https://github.com/rebels-software/csharp-opensource-class-library-template" branch="main" />
+    <tags>rebels class library template</tags>
+    <license type="expression">Apache-2.0</license>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <icon>content/assets/icon.png</icon>
+    <readme>content/README.md</readme>
+  </metadata>
+
+  <files>
+    <file src="**" target="content" exclude=".git\**;**\bin\**;**\obj\**;.github\**;*.nuspec" />
+  </files>
+
+</package>
