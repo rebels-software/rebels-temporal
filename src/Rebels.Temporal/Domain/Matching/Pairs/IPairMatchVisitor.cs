@@ -12,15 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+namespace Rebels.Temporal;
 
-namespace Rebels.Temporal
+/// <summary>
+/// Receives temporal match information for anchor–candidate pairs,
+/// using an allocation-free visitor pattern.
+/// </summary>
+/// <typeparam name="TAnchor">Type of anchor events.</typeparam>
+/// <typeparam name="TCandidate">Type of candidate events.</typeparam>
+public interface IPairMatchVisitor<in TAnchor, in TCandidate>
 {
-    public interface IPairMatchVisitor<in TAnchor, in TCandidate>
-    {
-        void OnMatch(TAnchor anchor, TCandidate candidate);
-    }
+    /// <summary>
+    /// Called for every matched pair. The pair includes anchor, candidate,
+    /// the matching semantics, and (if applicable) the temporal interval relation.
+    /// </summary>
+    /// <param name="pair">The match information.</param>
+    void OnMatch(in MatchPair<TAnchor, TCandidate> pair);
+
+    /// <summary>
+    /// Called exactly once for an anchor that produced no matches.
+    /// </summary>
+    /// <param name="anchor">The anchor event that had no matching candidates.</param>
+    void OnMiss(TAnchor anchor);
 }
