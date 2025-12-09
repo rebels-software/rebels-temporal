@@ -1,0 +1,26 @@
+# ADR-0012 — Partial Class Architecture for TimestampMatcher
+
+## Status
+Accepted
+
+## Context
+`TimestampMatcher` is a core component responsible for multiple match strategies:
+- one-to-one pair matching,
+- one-to-many group matching,
+- match operations with time windows,
+- match operations with tolerance,
+- visitor-based zero-allocation operations.
+
+A single-file implementation would be too large and difficult to maintain.
+
+## Decision
+The `TimestampMatcher` class will be implemented as a `partial` class, split across separated files each representing functionality.
+
+
+All parts share the same namespace (`Rebels.Temporal`).
+
+## Consequences
+- Modular and maintainable code organization.
+- A single public entry point remains (`TimestampMatcher`).
+- New match strategies can be added simply by creating additional partials.
+- Internal complexity is isolated while API remains clean.
