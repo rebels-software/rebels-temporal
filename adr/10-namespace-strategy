@@ -1,0 +1,21 @@
+# ADR-0010 — Namespace Strategy
+
+## Status
+Accepted
+
+## Context
+Rebels.Temporal is a domain-focused library dedicated to temporal processing: timestamp matching, temporal relations, and interval operations.  
+The internal folder structure of the repository is intentionally modular (Matching/Pairs, Matching/Groups, Intervals, Windows, etc.), but end users of the library should not need to import multiple namespaces.
+
+A clean and ergonomic API should be discoverable with a single `using` statement.
+
+## Decision
+All public types of the library will be exposed under a single flat namespace: namespace Rebels.Temporal;
+
+Internal folder structure does not dictate namespaces and is only for repository organization.
+
+## Consequences
+- Users need only `using Rebels.Temporal;` to access the full public API.
+- IntelliSense navigation becomes simple and predictable.
+- Internal modularity does not leak into the API surface.
+- Future modules can be added without introducing additional namespaces.
