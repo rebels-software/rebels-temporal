@@ -20,7 +20,7 @@ namespace Rebels.Temporal;
 /// </summary>
 /// <typeparam name="TAnchor">Type of anchor events.</typeparam>
 /// <typeparam name="TCandidate">Type of candidate events.</typeparam>
-public interface IPairMatchVisitor<in TAnchor, in TCandidate>
+public interface IPairMatchVisitor<TAnchor, TCandidate>
 {
     /// <summary>
     /// Called for every matched pair. The pair includes anchor, candidate,

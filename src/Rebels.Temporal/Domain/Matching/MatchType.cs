@@ -12,41 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Rebels.Temporal.Domain.Matching;
+namespace Rebels.Temporal;
 
 /// <summary>
-/// Describes the matching semantics applied to produce a match pair.
+/// Describes the type of temporal matching that occurred between
+/// an anchor and a candidate event.
 /// </summary>
 public enum MatchType
 {
     /// <summary>
-    /// Exact timestamp equality (point-to-point, no tolerance).
+    /// Both anchor and candidate represent points in time,
+    /// and their timestamps must match exactly (no tolerance).
     /// </summary>
-    Exact,
+    PointExact,
 
     /// <summary>
-    /// The anchor is expanded into a time window; candidates are points.
+    /// One side (anchor or candidate) is a point in time,
+    /// and the other side represents an interval. The match
+    /// occurs when the point lies within the interval.
     /// </summary>
-    AnchorWindow,
+    PointInInterval,
 
     /// <summary>
-    /// Candidates represent time windows; anchor is a point.
+    /// Both anchor and candidate were interpreted as intervals.
+    /// Their relationship is evaluated using Allen's Interval Algebra.
     /// </summary>
-    CandidateWindow,
-
-    /// <summary>
-    /// Both anchor and candidate were interpreted as windows.
-    /// </summary>
-    BidirectionalWindow,
-
-    /// <summary>
-    /// Both sides are true intervals; temporal relation is computed
-    /// according to Allen's interval algebra.
-    /// </summary>
-    IntervalRelation
+    IntervalOverlap
 }
