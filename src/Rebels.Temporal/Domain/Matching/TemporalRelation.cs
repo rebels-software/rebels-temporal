@@ -24,106 +24,106 @@ namespace Rebels.Temporal;
 public enum TemporalRelation
 {
     /// <summary>
-    /// A ends before B starts.
+    /// Anchor ends before Candidate starts.
     /// 
-    /// A: [-----]
-    /// B:           [-----]
+    /// Anchor:    [-----]
+    /// Candidate:           [-----]
     /// </summary>
     Before,
 
     /// <summary>
-    /// A ends exactly when B starts.
+    /// Anchor ends exactly when B starts.
     /// 
-    /// A: [-----]
-    /// B:       [-----]
+    /// Anchor:    [-----]
+    /// Candidate:       [-----]
     /// </summary>
     Meets,
 
     /// <summary>
-    /// A starts before B and ends inside B.
+    /// Anchor starts before Candidate and ends inside Candidate.
     /// 
-    /// A:   [-----]
-    /// B: [-----------]
+    /// Anchor:    [-----]
+    /// Candidate:   [-----------]
     /// </summary>
     Overlaps,
 
     /// <summary>
-    /// A and B start together, but A ends earlier.
+    /// Anchor and Candidate start together, but Anchor ends earlier.
     /// 
-    /// A: [-----]
-    /// B: [-----------]
+    /// Anchor:    [-----]
+    /// Candidate: [-----------]
     /// </summary>
     Starts,
 
     /// <summary>
-    /// A starts after B begins and ends before B finishes.
+    /// Anchor starts after Candidate begins and ends before Candidate finishes.
     /// 
-    /// A:    [-----]
-    /// B: [-----------]
+    /// Anchor:       [-----]
+    /// Candidate: [-----------]
     /// </summary>
     During,
 
     /// <summary>
-    /// A ends together with B, but A starts later.
+    /// Anchor ends together with Candidate, but Anchor starts later.
     /// 
-    /// A:     [-----]
-    /// B: [-----------]
+    /// Anchor:          [-----]
+    /// Candidate: [-----------]
     /// </summary>
     Finishes,
 
     /// <summary>
-    /// A and B start and end at the same time.
+    /// Anchor and Candidate start and end at the same time.
     /// 
-    /// A: [-----]
-    /// B: [-----]
+    /// Anchor:    [-----]
+    /// Candidate: [-----]
     /// </summary>
     Equal,
 
     /// <summary>
-    /// A starts after B ends (the inverse of Before).
+    /// Anchor starts after Candidate ends (the inverse of Before).
     /// 
-    /// A:           [-----]
-    /// B: [-----]
+    /// Anchor:              [-----]
+    /// Candidate: [-----]
     /// </summary>
     After,
 
     /// <summary>
-    /// A starts exactly when B ends (the inverse of Meets).
+    /// Anchor starts exactly when Candidate ends (the inverse of Meets).
     /// 
-    /// A:       [-----]
-    /// B: [-----]
+    /// Anchor:          [-----]
+    /// Candidate: [-----]
     /// </summary>
     MetBy,
 
     /// <summary>
-    /// A starts inside B and ends after B finishes (inverse of Overlaps).
+    /// Anchor starts inside Candidate and ends after Candidate finishes (inverse of Overlaps).
     /// 
-    /// A:     [-----------]
-    /// B: [-----]
+    /// Anchor:        [-----------]
+    /// Candidate: [-----]
     /// </summary>
     OverlappedBy,
 
     /// <summary>
-    /// A and B start together, but A ends later (inverse of Starts).
+    /// Anchor and Candidate start together, but Anchor ends later (inverse of Starts).
     /// 
-    /// A: [-----------]
-    /// B: [-----]
+    /// Anchor:    [-----------]
+    /// Candidate: [-----]
     /// </summary>
     StartedBy,
 
     /// <summary>
-    /// A starts before B and ends after B finishes (inverse of During).
+    /// Anchor starts before Candidate and ends after Candidate finishes (inverse of During).
     /// 
-    /// A: [-----------]
-    /// B:    [-----]
+    /// Anchor:    [-----------]
+    /// Candidate:    [-----]
     /// </summary>
     Contains,
 
     /// <summary>
-    /// A starts before B but ends together with B (inverse of Finishes).
+    /// Anchor starts before Candidate but ends together with Candidate (inverse of Finishes).
     /// 
-    /// A: [-----------]
-    /// B:     [-----]
+    /// Anchor:  [-----------]
+    /// Candidate:     [-----]
     /// </summary>
     FinishedBy
 }
