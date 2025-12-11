@@ -21,6 +21,9 @@ namespace Rebels.Temporal
 {
     public static partial class TimestampMatcher
     {
-        
+        public static void Match()
+        {
+            
+        }
     }
 }
