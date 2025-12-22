@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Rebels.Temporal.Domain.Matching
+namespace Rebels.Temporal
 {
     /// <summary>
     /// Represents an entity that can be matched using a single timestamp.
@@ -21,7 +21,7 @@ namespace Rebels.Temporal.Domain.Matching
     /// Types implementing this interface expose exactly one point in time
     /// which can be used in point-to-point or point-to-interval matching operations.
     /// </remarks>
-    public interface IMatchableByPoint
+    public interface ITemporalPoint
     {
         /// <summary>
         /// Gets the timestamp representing the temporal position of the entity.

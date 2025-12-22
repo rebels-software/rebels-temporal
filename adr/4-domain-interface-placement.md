@@ -1,4 +1,4 @@
-# ADR-0004 – Placement of Domain Interfaces in `/Domain`
+# ADR-4 – Placement of Domain Interfaces in `/Domain`
 
 ## Status
 Accepted

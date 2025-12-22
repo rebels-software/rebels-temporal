@@ -1,4 +1,4 @@
-# ADR-0005 – No Application or Infrastructure Layers in This Repository
+# ADR-5 – No Application or Infrastructure Layers in This Repository
 
 ## Status
 Accepted

@@ -1,4 +1,4 @@
-# ADR-0012 — Partial Class Architecture for TimestampMatcher
+# ADR-12 — Partial Class Architecture for TimestampMatcher
 
 ## Status
 Accepted

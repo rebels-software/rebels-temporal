@@ -9,4 +9,8 @@
     <Version>0.0.1-rc</Version>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Rebels.Temporal.Tests" />
+  </ItemGroup>
+
 </Project>

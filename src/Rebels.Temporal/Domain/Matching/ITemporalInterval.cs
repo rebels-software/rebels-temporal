@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Rebels.Temporal.Domain.Matching
+namespace Rebels.Temporal
 {
     /// <summary>
     /// Represents an entity that can be matched using a time interval
@@ -23,7 +23,7 @@ namespace Rebels.Temporal.Domain.Matching
     /// or equal to <see cref="End"/>. Both values must be unambiguous moments
     /// in time expressed as <see cref="DateTimeOffset"/>.
     /// </remarks>
-    public interface IMatchableByInterval
+    public interface ITemporalInterval
     {
         /// <summary>
         /// Gets the timestamp representing the start of the interval.

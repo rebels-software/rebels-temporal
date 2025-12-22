@@ -1,4 +1,4 @@
-# ADR-0010 — Namespace Strategy
+# ADR-10 — Namespace Strategy
 
 ## Status
 Accepted

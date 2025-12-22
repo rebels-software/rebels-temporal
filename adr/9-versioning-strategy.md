@@ -1,4 +1,4 @@
-# ADR-0009 – Versioning Strategy (Semantic Versioning for .NET Libraries)
+# ADR-9 – Versioning Strategy (Semantic Versioning for .NET Libraries)
 
 ## Status
 Accepted

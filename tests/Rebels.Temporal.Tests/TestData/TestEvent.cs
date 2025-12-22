@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Rebels.Temporal
+namespace Rebels.Temporal.Tests.TestData;
+
+public readonly record struct TestEvent(DateTimeOffset Timestamp, string Name) : ITemporalPoint
 {
-    public static partial class TimestampMatcher
-    {
-        public static void Match()
-        {
-            
-        }
-    }
+    public DateTimeOffset At => Timestamp;
 }

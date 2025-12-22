@@ -1,4 +1,4 @@
-# ADR-0013 — Visitor API Design
+# ADR-13 — Visitor API Design
 
 ## Status
 Accepted

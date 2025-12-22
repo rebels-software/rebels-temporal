@@ -1,4 +1,4 @@
-# ADR-0007 – Temporal Relations Model Based on Allen’s Interval Algebra (Expanded)
+# ADR-7 – Temporal Relations Model Based on Allen’s Interval Algebra (Expanded)
 
 ## Status
 Accepted
