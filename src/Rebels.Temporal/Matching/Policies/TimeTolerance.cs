@@ -54,12 +54,12 @@ public readonly struct TimeTolerance
     {
         if (before < TimeSpan.Zero)
         {
-            throw new ArgumentException("Before tolerance cannot be negative.", nameof(before));
+            throw new ArgumentOutOfRangeException(nameof(before), "Before tolerance cannot be negative.");
         }
 
         if (after < TimeSpan.Zero)
         {
-            throw new ArgumentException("After tolerance cannot be negative.", nameof(after));
+            throw new ArgumentOutOfRangeException(nameof(after), "After tolerance cannot be negative.");
         }
 
         Before = before;

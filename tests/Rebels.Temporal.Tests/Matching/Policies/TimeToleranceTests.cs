@@ -52,7 +52,7 @@ public class TimeToleranceTests
         var validAfter = TimeSpan.FromSeconds(10);
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() =>
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
             new TimeTolerance(negativeBefore, validAfter));
 
         Assert.That(exception!.Message, Does.Contain("Before tolerance cannot be negative"));
@@ -67,7 +67,7 @@ public class TimeToleranceTests
         var negativeAfter = TimeSpan.FromSeconds(-10);
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() =>
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
             new TimeTolerance(validBefore, negativeAfter));
 
         Assert.That(exception!.Message, Does.Contain("After tolerance cannot be negative"));
@@ -82,7 +82,7 @@ public class TimeToleranceTests
         var negativeAfter = TimeSpan.FromSeconds(-10);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
             new TimeTolerance(negativeBefore, negativeAfter));
     }
 
@@ -119,7 +119,7 @@ public class TimeToleranceTests
         var negativeTolerance = TimeSpan.FromSeconds(-5);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
             TimeTolerance.Symmetric(negativeTolerance));
     }
 

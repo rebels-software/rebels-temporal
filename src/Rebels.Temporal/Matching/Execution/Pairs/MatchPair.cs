@@ -47,7 +47,7 @@ public readonly struct MatchPair<TAnchor, TCandidate>
     /// </summary>
     public TemporalRelation? Relation { get; }
 
-    internal MatchPair(
+    public MatchPair(
         TAnchor anchor,
         TCandidate candidate,
         MatchType matchType,
@@ -62,7 +62,7 @@ public readonly struct MatchPair<TAnchor, TCandidate>
         }
 
         // Validate: IntervalOverlap must have a relation
-        if (matchType == MatchType.IntervalOverlap && !relation.HasValue)
+        if (matchType == MatchType.Interval && !relation.HasValue)
         {
             throw new ArgumentException(
                 "MatchType IntervalOverlap requires a temporal relation to be specified.",

@@ -73,13 +73,13 @@ public class MatchPairTests
         var pair = new MatchPair<TestInterval, TestInterval>(
             anchor,
             candidate,
-            MatchType.IntervalOverlap,
+            MatchType.Interval,
             TemporalRelation.Overlaps);
 
         // Assert
         Assert.That(pair.Anchor, Is.EqualTo(anchor));
         Assert.That(pair.Candidate, Is.EqualTo(candidate));
-        Assert.That(pair.MatchType, Is.EqualTo(MatchType.IntervalOverlap));
+        Assert.That(pair.MatchType, Is.EqualTo(MatchType.Interval));
         Assert.That(pair.Relation, Is.EqualTo(TemporalRelation.Overlaps));
     }
 
@@ -112,7 +112,7 @@ public class MatchPairTests
         var pair = new MatchPair<TestInterval, TestInterval>(
             anchor,
             candidate,
-            MatchType.IntervalOverlap,
+            MatchType.Interval,
             relation);
 
         // Assert
@@ -169,7 +169,7 @@ public class MatchPairTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            new MatchPair<TestInterval, TestInterval>(anchor, candidate, MatchType.IntervalOverlap));
+            new MatchPair<TestInterval, TestInterval>(anchor, candidate, MatchType.Interval));
 
         Assert.That(exception!.Message, Does.Contain("IntervalOverlap"));
         Assert.That(exception.Message, Does.Contain("requires a temporal relation"));
@@ -191,7 +191,7 @@ public class MatchPairTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            new MatchPair<TestInterval, TestInterval>(anchor, candidate, MatchType.IntervalOverlap, null));
+            new MatchPair<TestInterval, TestInterval>(anchor, candidate, MatchType.Interval, null));
 
         Assert.That(exception!.Message, Does.Contain("IntervalOverlap"));
         Assert.That(exception.Message, Does.Contain("requires a temporal relation"));

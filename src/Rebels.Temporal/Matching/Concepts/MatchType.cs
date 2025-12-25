@@ -37,5 +37,5 @@ public enum MatchType
     /// Both anchor and candidate were interpreted as intervals.
     /// Their relationship is evaluated using Allen's Interval Algebra.
     /// </summary>
-    IntervalOverlap
+    Interval
 }
