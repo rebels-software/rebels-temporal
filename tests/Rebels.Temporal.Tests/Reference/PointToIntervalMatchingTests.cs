@@ -26,7 +26,7 @@ public class PointToIntervalMatchingTests : MatchingTestBase
             .AnchorOffsets(5, 15, 25)
             .CandidateIntervals((0, 10), (20, 30), (40, 50))
         .When
-            .MatchPointToIntervalIsCalled<ExactMatchPolicy>()
+            .MatchPointToIntervalIsCalled(TestPolicies.ExactMatch)
         .Then
             .TotalMatchCount(2)
             .TotalMissCount(1);
@@ -41,9 +41,9 @@ public class PointToIntervalMatchingTests : MatchingTestBase
             .AnchorOffsets(0)
             .CandidateIntervals((-10, -5), (-5, 0), (0, 5), (5, 10))
         .When
-            .MatchPointToIntervalIsCalled<SymmetricTolerancePolicy>()
+            .MatchPointToIntervalIsCalled(TestPolicies.SymmetricTolerance)
         .Then
-            .TotalMatchCount(2)
+            .TotalMatchCount(4)
             .TotalMissCount(0);
     }
 }

@@ -40,12 +40,6 @@ public enum InputOrdering
     Candidates,
 
     /// <summary>
-    /// Only the anchor collection is sorted
-    /// in ascending temporal order.
-    /// </summary>
-    Anchors,
-
-    /// <summary>
     /// Both anchor and candidate collections are sorted
     /// in ascending temporal order.
     /// </summary>

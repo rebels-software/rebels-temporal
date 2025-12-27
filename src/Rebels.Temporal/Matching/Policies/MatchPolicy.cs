@@ -15,12 +15,8 @@
 namespace Rebels.Temporal;
 
 /// <summary>
-/// Defines a compile-time matching policy used by the temporal matcher
-/// to generate an optimal matching algorithm.
-///
-/// Implementations of this interface are evaluated at compile time
-/// by source generators and must therefore expose all configuration
-/// via static members.
+/// Defines a runtime matching policy used by the temporal matcher
+/// to select the optimal matching algorithm and configure matching behavior.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,29 +28,29 @@ namespace Rebels.Temporal;
 /// </list>
 /// </para>
 /// <para>
-/// Policies are intended to be stable, design-time decisions.
-/// They are not meant to be configured dynamically at runtime.
+/// Policies can be configured at runtime based on application requirements,
+/// configuration files, or dynamic system conditions.
 /// </para>
 /// </remarks>
-public interface IMatchPolicy
+public class MatchPolicy
 {
     /// <summary>
-    /// Gets the time tolerance applied to anchor events.
+    /// Gets or sets the time tolerance applied to anchor events.
     /// </summary>
-    static abstract TimeTolerance AnchorTolerance { get; }
+    public TimeTolerance AnchorTolerance { get; set; } = TimeTolerance.None;
 
     /// <summary>
-    /// Gets the time tolerance applied to candidate events.
+    /// Gets or sets the time tolerance applied to candidate events.
     /// </summary>
-    static abstract TimeTolerance CandidateTolerance { get; }
+    public TimeTolerance CandidateTolerance { get; set; } = TimeTolerance.None;
 
     /// <summary>
-    /// Gets the set of temporal relations that are considered valid matches.
+    /// Gets or sets the set of temporal relations that are considered valid matches.
     /// </summary>
-    static abstract AllowedRelations AllowedTemporalRelations { get; }
+    public AllowedRelations AllowedTemporalRelations { get; set; } = AllowedRelations.Any;
 
     /// <summary>
-    /// Indicates which colletion is sorted.
+    /// Gets or sets which collection is sorted in ascending temporal order.
     /// </summary>
-    static abstract InputOrdering InputOrdering { get; }
+    public InputOrdering InputOrdering { get; set; } = InputOrdering.None;
 }

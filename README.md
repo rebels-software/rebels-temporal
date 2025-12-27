@@ -89,6 +89,161 @@ Rebels.Temporal defines a small, precise vocabulary for working with temporal da
 dotnet add package Rebels.Temporal
 ```
 
+### Quick Start
+
+#### Define Your Temporal Types
+
+```csharp
+using Rebels.Temporal;
+
+// Point-in-time events
+public readonly record struct SensorReading(DateTimeOffset Timestamp, double Value) : ITemporalPoint
+{
+    public DateTimeOffset At => Timestamp;
+}
+
+// Interval-based events
+public readonly record struct DeviceSession(DateTimeOffset StartTime, DateTimeOffset EndTime, string DeviceId) : ITemporalInterval
+{
+    public DateTimeOffset Start => StartTime;
+    public DateTimeOffset End => EndTime;
+}
+```
+
+#### Match Point-to-Point Events
+
+```csharp
+// Create test data
+var telemetryEvents = new[]
+{
+    new SensorReading(DateTimeOffset.Now, 23.5),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(5), 24.1),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(10), 23.8)
+};
+
+var commandEvents = new[]
+{
+    new SensorReading(DateTimeOffset.Now.AddMilliseconds(50), 0),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(10), 0)
+};
+
+// Configure matching policy
+var policy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromMilliseconds(100)),
+    InputOrdering = InputOrdering.None
+};
+
+// Allocate buffer for results
+var buffer = new MatchPair<SensorReading, SensorReading>[100];
+var matchBuffer = new MatchBuffer<SensorReading, SensorReading> { Pairs = buffer };
+
+// Perform matching using fluent API
+int matchCount = TemporalMatcher.Points.With.Points(
+    telemetryEvents,
+    commandEvents,
+    policy,
+    ref matchBuffer);
+
+// Process results
+for (int i = 0; i < matchCount; i++)
+{
+    var match = buffer[i];
+    Console.WriteLine($"Matched: {match.Anchor.Value} ↔ {match.Candidate.Value} " +
+                     $"(Type: {match.MatchType})");
+}
+```
+
+#### Match Point-to-Interval
+
+```csharp
+var events = new[]
+{
+    new SensorReading(DateTimeOffset.Now, 23.5),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(5), 24.1)
+};
+
+var sessions = new[]
+{
+    new DeviceSession(DateTimeOffset.Now.AddSeconds(-1), DateTimeOffset.Now.AddSeconds(3), "Device1"),
+    new DeviceSession(DateTimeOffset.Now.AddSeconds(4), DateTimeOffset.Now.AddSeconds(8), "Device2")
+};
+
+var policy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.None,
+    AllowedTemporalRelations = AllowedRelations.Any
+};
+
+var buffer = new MatchPair<SensorReading, DeviceSession>[100];
+var matchBuffer = new MatchBuffer<SensorReading, DeviceSession> { Pairs = buffer };
+
+int matchCount = TemporalMatcher.Points.With.Intervals(
+    events,
+    sessions,
+    policy,
+    ref matchBuffer);
+```
+
+#### Match Interval-to-Interval with Allen Relations
+
+```csharp
+var chargingSessions = new[]
+{
+    new DeviceSession(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1), "Device1"),
+    new DeviceSession(DateTimeOffset.Now.AddMinutes(30), DateTimeOffset.Now.AddHours(2), "Device2")
+};
+
+var usageSessions = new[]
+{
+    new DeviceSession(DateTimeOffset.Now.AddMinutes(15), DateTimeOffset.Now.AddMinutes(45), "Usage1"),
+    new DeviceSession(DateTimeOffset.Now.AddHours(1.5), DateTimeOffset.Now.AddHours(3), "Usage2")
+};
+
+var policy = new MatchPolicy
+{
+    // Only match intervals that overlap or one contains the other
+    AllowedTemporalRelations = AllowedRelations.Overlaps |
+                              AllowedRelations.OverlappedBy |
+                              AllowedRelations.Contains |
+                              AllowedRelations.During
+};
+
+var buffer = new MatchPair<DeviceSession, DeviceSession>[100];
+var matchBuffer = new MatchBuffer<DeviceSession, DeviceSession> { Pairs = buffer };
+
+int matchCount = TemporalMatcher.Intervals.With.Intervals(
+    chargingSessions,
+    usageSessions,
+    policy,
+    ref matchBuffer);
+
+// Access Allen relation for each match
+for (int i = 0; i < matchCount; i++)
+{
+    var match = buffer[i];
+    Console.WriteLine($"Interval relation: {match.Relation}");
+}
+```
+
+#### Performance Optimization with Sorted Data
+
+```csharp
+// If your data is pre-sorted, use InputOrdering for optimized algorithms
+var sortedPolicy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(1)),
+    InputOrdering = InputOrdering.Both  // O(n+m) dual-pointer scan
+};
+
+// Or just candidates sorted
+var candidatesSortedPolicy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(1)),
+    InputOrdering = InputOrdering.Candidates  // O(n log m) binary search
+};
+```
+
 ## Working with AI Assistants
 
 This repository is optimized for contributing with help from modern LLM-based assistants (ChatGPT, Claude, Mistral, Gemini, etc.).

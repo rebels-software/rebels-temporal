@@ -32,7 +32,7 @@ public enum TemporalRelation
     Before,
 
     /// <summary>
-    /// Anchor ends exactly when B starts.
+    /// Anchor ends exactly when Candidate starts.
     /// 
     /// Anchor:    [-----]
     /// Candidate:       [-----]

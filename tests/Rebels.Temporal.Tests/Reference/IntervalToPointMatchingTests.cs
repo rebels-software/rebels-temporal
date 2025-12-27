@@ -26,7 +26,7 @@ public class IntervalToPointMatchingTests : MatchingTestBase
             .AnchorIntervals((0, 10), (20, 30))
             .CandidateOffsets(5, 15, 25)
         .When
-            .MatchIntervalToPointIsCalled<ExactMatchPolicy>()
+            .MatchIntervalToPointIsCalled(TestPolicies.ExactMatch)
         .Then
             .TotalMatchCount(2)
             .TotalMissCount(0);
