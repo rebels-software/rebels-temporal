@@ -21,7 +21,7 @@ namespace Rebels.Temporal;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="TemporalMatcher"/> exposes a set of specialized entry points
+/// <see cref="TemporalMatcher{TPolicy}"/> exposes a set of specialized entry points
 /// for matching temporal points and intervals using source-generated
 /// implementations.
 /// </para>
@@ -35,7 +35,9 @@ namespace Rebels.Temporal;
 /// If a required generated implementation is missing, the build will fail.
 /// </para>
 /// </remarks>
-public static partial class TemporalMatcher
+/// <typeparam name="TPolicy">The compile-time match policy.</typeparam>
+public static partial class TemporalMatcher<TPolicy>
+    where TPolicy : IMatchPolicy
 {
     #region Point to Point matching
 
@@ -49,10 +51,6 @@ public static partial class TemporalMatcher
     /// <typeparam name="TCandidate">
     /// The candidate type. Must represent a single point in time.
     /// </typeparam>
-    /// <typeparam name="TPolicy">
-    /// The compile-time match policy defining tolerances, ordering
-    /// guarantees and allowed semantics.
-    /// </typeparam>
     /// <param name="anchors">
     /// The collection of anchor events to be matched.
     /// </param>
@@ -62,23 +60,20 @@ public static partial class TemporalMatcher
     /// <param name="visitor">
     /// A visitor that receives match and miss callbacks as matches are discovered.
     /// </param>
-    public static void MatchPointToPoint<TAnchor, TCandidate, TPolicy>(
+    public static void MatchPointToPoint<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalPoint
         where TCandidate : ITemporalPoint
-        where TPolicy : IMatchPolicy
-        => MatchPointToPointGenerated<TAnchor, TCandidate, TPolicy>(
-            anchors, candidates, visitor);
+        => MatchPointToPointGenerated(anchors, candidates, visitor);
 
-    static partial void MatchPointToPointGenerated<TAnchor, TCandidate, TPolicy>(
+    static partial void MatchPointToPointGenerated<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalPoint
-        where TCandidate : ITemporalPoint
-        where TPolicy : IMatchPolicy;
+        where TCandidate : ITemporalPoint;
 
     #endregion
 
@@ -88,23 +83,20 @@ public static partial class TemporalMatcher
     /// Matches temporal anchors represented as points in time
     /// against candidate intervals.
     /// </summary>
-    public static void MatchPointToInterval<TAnchor, TCandidate, TPolicy>(
+    public static void MatchPointToInterval<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalPoint
         where TCandidate : ITemporalInterval
-        where TPolicy : IMatchPolicy
-        => MatchPointToIntervalGenerated<TAnchor, TCandidate, TPolicy>(
-            anchors, candidates, visitor);
+        => MatchPointToIntervalGenerated(anchors, candidates, visitor);
 
-    static partial void MatchPointToIntervalGenerated<TAnchor, TCandidate, TPolicy>(
+    static partial void MatchPointToIntervalGenerated<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalPoint
-        where TCandidate : ITemporalInterval
-        where TPolicy : IMatchPolicy;
+        where TCandidate : ITemporalInterval;
 
     #endregion
 
@@ -114,23 +106,20 @@ public static partial class TemporalMatcher
     /// Matches temporal anchors represented as intervals
     /// against candidate points in time.
     /// </summary>
-    public static void MatchIntervalToPoint<TAnchor, TCandidate, TPolicy>(
+    public static void MatchIntervalToPoint<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalInterval
         where TCandidate : ITemporalPoint
-        where TPolicy : IMatchPolicy
-        => MatchIntervalToPointGenerated<TAnchor, TCandidate, TPolicy>(
-            anchors, candidates, visitor);
+        => MatchIntervalToPointGenerated(anchors, candidates, visitor);
 
-    static partial void MatchIntervalToPointGenerated<TAnchor, TCandidate, TPolicy>(
+    static partial void MatchIntervalToPointGenerated<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalInterval
-        where TCandidate : ITemporalPoint
-        where TPolicy : IMatchPolicy;
+        where TCandidate : ITemporalPoint;
 
     #endregion
 
@@ -140,23 +129,56 @@ public static partial class TemporalMatcher
     /// Matches temporal anchors and candidates that are both represented
     /// as temporal intervals.
     /// </summary>
-    public static void MatchIntervalToInterval<TAnchor, TCandidate, TPolicy>(
+    public static void MatchIntervalToInterval<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalInterval
         where TCandidate : ITemporalInterval
-        where TPolicy : IMatchPolicy
-        => MatchIntervalToIntervalGenerated<TAnchor, TCandidate, TPolicy>(
-            anchors, candidates, visitor);
+        => MatchIntervalToIntervalGenerated(anchors, candidates, visitor);
 
-    static partial void MatchIntervalToIntervalGenerated<TAnchor, TCandidate, TPolicy>(
+    static partial void MatchIntervalToIntervalGenerated<TAnchor, TCandidate>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         IPairMatchVisitor<TAnchor, TCandidate> visitor)
         where TAnchor : ITemporalInterval
-        where TCandidate : ITemporalInterval
-        where TPolicy : IMatchPolicy;
+        where TCandidate : ITemporalInterval;
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Determines the Allen's interval algebra relation between two temporal intervals.
+    /// </summary>
+    /// <param name="aStart">Start time of the first interval.</param>
+    /// <param name="aEnd">End time of the first interval.</param>
+    /// <param name="bStart">Start time of the second interval.</param>
+    /// <param name="bEnd">End time of the second interval.</param>
+    /// <returns>The temporal relation between the two intervals.</returns>
+    private static TemporalRelation DetermineAllenRelation(
+        System.DateTimeOffset aStart,
+        System.DateTimeOffset aEnd,
+        System.DateTimeOffset bStart,
+        System.DateTimeOffset bEnd)
+    {
+        if (aEnd < bStart) return TemporalRelation.Before;
+        if (aEnd == bStart) return TemporalRelation.Meets;
+        if (aStart > bEnd) return TemporalRelation.After;
+        if (aStart == bEnd) return TemporalRelation.MetBy;
+
+        if (aStart == bStart && aEnd == bEnd) return TemporalRelation.Equal;
+        if (aStart == bStart && aEnd < bEnd) return TemporalRelation.Starts;
+        if (aStart == bStart && aEnd > bEnd) return TemporalRelation.StartedBy;
+        if (aEnd == bEnd && aStart > bStart) return TemporalRelation.Finishes;
+        if (aEnd == bEnd && aStart < bStart) return TemporalRelation.FinishedBy;
+
+        if (aStart > bStart && aEnd < bEnd) return TemporalRelation.During;
+        if (aStart < bStart && aEnd > bEnd) return TemporalRelation.Contains;
+
+        if (aStart < bStart) return TemporalRelation.Overlaps;
+        return TemporalRelation.OverlappedBy;
+    }
 
     #endregion
 }

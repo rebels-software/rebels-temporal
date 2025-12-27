@@ -31,7 +31,7 @@ public class IntervalToIntervalMatchingTests : MatchingTestBase
             var anchors = new[] { anchor };
             var candidates = new[] { candidate };
 
-            ReferenceTemporalMatcher.MatchIntervalToInterval<TestInterval, TestInterval, ExactMatchPolicy>(
+            TemporalMatcher<ExactMatchPolicy>.MatchIntervalToInterval(
                 anchors, candidates, visitor);
 
             Assert.That(visitor.Matches.Count, Is.EqualTo(1),
@@ -52,7 +52,7 @@ public class IntervalToIntervalMatchingTests : MatchingTestBase
             var anchors = new[] { anchor };
             var candidates = new[] { candidate };
 
-            ReferenceTemporalMatcher.MatchIntervalToInterval<TestInterval, TestInterval, FilteredRelationsPolicy>(
+            TemporalMatcher<FilteredRelationsPolicy>.MatchIntervalToInterval(
                 anchors, candidates, visitor);
 
             var expectedRelation = anchor.Name.Contains("Equal") ? TemporalRelation.Equal :
