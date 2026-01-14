@@ -1,10 +1,10 @@
-# ADR-10 — Namespace Strategy
+# ADR-9 — Namespace Strategy
 
 ## Status
 Accepted
 
 ## Context
-Rebels.Temporal is a domain-focused library dedicated to temporal processing: timestamp matching, temporal relations, and interval operations.  
+Rebels.Temporal is a domain-focused library dedicated to temporal processing: timestamp matching, temporal relations, and interval operations.
 The internal folder structure of the repository is intentionally modular (Matching/Pairs, Matching/Groups, Intervals, Windows, etc.), but end users of the library should not need to import multiple namespaces.
 
 A clean and ergonomic API should be discoverable with a single `using` statement.

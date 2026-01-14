@@ -262,7 +262,8 @@ You are assisting as a contributor to the open-source library Rebels.Temporal.
 Load and study the following repository structure, including its documentation and architecture decision records:
 - README.md
 - /docs (all files)
-- /adr (all Architecture Decision Records)
+- /docs/adr (all Architecture Decision Records)
+- /docs/invariants (all non-negotiable rules of the system)
 - /Domain and its subfolders
 - /Engine and all public API types
 

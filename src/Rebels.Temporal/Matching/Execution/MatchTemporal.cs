@@ -18,7 +18,7 @@ namespace Rebels.Temporal;
 /// Provides high-performance temporal matching algorithms for correlating
 /// anchors and candidates based on their temporal characteristics.
 /// </summary>
-public static class TemporalMatcher
+public static class MatchTemporal
 {
     /// <summary>
     /// Entry point for matching point anchors.

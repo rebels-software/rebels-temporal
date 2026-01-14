@@ -72,7 +72,7 @@ public class MatchingTestBuilder
         Span<MatchPair<TestEvent, TestEvent>> bufferSpan = _pointMatches;
         var buffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = bufferSpan };
 
-        _matchCount = TemporalMatcher.Points.With.Points(anchors, candidates, policy, ref buffer);
+        _matchCount = MatchTemporal.Points.With.Points(anchors, candidates, policy, ref buffer);
 
         return this;
     }
@@ -88,7 +88,7 @@ public class MatchingTestBuilder
         Span<MatchPair<TestEvent, TestInterval>> bufferSpan = _pointToIntervalMatches;
         var buffer = new MatchBuffer<TestEvent, TestInterval> { Pairs = bufferSpan };
 
-        _matchCount = TemporalMatcher.Points.With.Intervals(anchors, candidates, policy, ref buffer);
+        _matchCount = MatchTemporal.Points.With.Intervals(anchors, candidates, policy, ref buffer);
 
         return this;
     }
@@ -104,7 +104,7 @@ public class MatchingTestBuilder
         Span<MatchPair<TestInterval, TestEvent>> bufferSpan = _intervalToPointMatches;
         var buffer = new MatchBuffer<TestInterval, TestEvent> { Pairs = bufferSpan };
 
-        _matchCount = TemporalMatcher.Intervals.With.Points(anchors, candidates, policy, ref buffer);
+        _matchCount = MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref buffer);
 
         return this;
     }
@@ -120,7 +120,7 @@ public class MatchingTestBuilder
         Span<MatchPair<TestInterval, TestInterval>> bufferSpan = _intervalMatches;
         var buffer = new MatchBuffer<TestInterval, TestInterval> { Pairs = bufferSpan };
 
-        _matchCount = TemporalMatcher.Intervals.With.Intervals(anchors, candidates, policy, ref buffer);
+        _matchCount = MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref buffer);
 
         return this;
     }

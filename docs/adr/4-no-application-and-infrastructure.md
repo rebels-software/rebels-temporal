@@ -1,4 +1,4 @@
-# ADR-5 – No Application or Infrastructure Layers in This Repository
+# ADR-4 – No Application or Infrastructure Layers in This Repository
 
 ## Status
 Accepted

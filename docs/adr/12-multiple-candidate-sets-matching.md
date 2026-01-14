@@ -1,4 +1,4 @@
-# ADR-15 — Multiple candidate sets matching
+# ADR-12 — Multiple Candidate Sets Matching
 
 ## Status
 Accepted
@@ -18,7 +18,6 @@ However, this introduces significant challenges:
 - A single matcher invocation with heterogeneous candidate sets leads to:
     - complex and unclear visitor contracts,
     - combinatorial explosion of generic parameters,
-    - increased complexity in source generators,
     - unclear separation of responsibilities.
 
 At the same time, the core matching logic is inherently defined as a relationship between one anchor type, and one candidate type, under a single, well-defined matching configuration.
@@ -31,47 +30,34 @@ The core matching engine operates on:
  - a single anchor collection,
  - a single candidate collection,
  - a single matching configuration,
- - a single strongly-typed visitor.
+ - a single result buffer.
 
- ``` csharp
- Match(
-    IReadOnlyList<TAnchor> anchors,
-    IReadOnlyList<TCandidate> candidates,
-    MatchOptions options,
-    IPairMatchVisitor<TAnchor, TCandidate> visitor);
- ```
-
-This core API is the only target of Roslyn source generators, ensuring:
+This core API ensures:
 - minimal complexity,
 - maximal performance,
-- predictable code generation,
 - strong static typing.
 
 ### Orchestration
 Correlating a single anchor collection against multiple candidate collections is defined as an orchestration concern, not a responsibility of the core matcher.
 
 Orchestration is performed by the caller, for example:
- ``` csharp
-matcher.Match(anchors, candidatesA, optionsA, visitorA);
-matcher.Match(anchors, candidatesB, optionsB, visitorB);
-matcher.Match(anchors, candidatesC, optionsC, visitorC);
- ```
+```csharp
+MatchTemporal.Points.With.Points(anchors, candidatesA, policyA, ref bufferA);
+MatchTemporal.Points.With.Points(anchors, candidatesB, policyB, ref bufferB);
+MatchTemporal.Points.With.Points(anchors, candidatesC, policyC, ref bufferC);
+```
 
 Optional orchestration helpers may be provided, but they:
 - compose multiple core matcher invocations,
-- do not introduce new matching semantics,
-- do not participate in source generation.
+- do not introduce new matching semantics.
 
 Global concerns such as:
 - determining whether an anchor matched any candidate across all sources,
-- invoking OnMiss(anchor) only once,
 - are handled at the orchestration layer.
 
 ## Consequences
 - Core matching remains simple, deterministic, and strongly typed.
 - Each matcher invocation operates on exactly one anchor–candidate type pair.
-- The visitor contract stays minimal and type-safe.
-- Source generators remain focused on a single, well-defined responsibility.
 - Orchestration logic is explicit and visible in user code.
 - The design scales naturally to any number of candidate sources without API explosion.
-- The architecture cleanly follows the principle: **“Matching is computation; orchestration is coordination.”**
+- The architecture cleanly follows the principle: **"Matching is computation; orchestration is coordination."**

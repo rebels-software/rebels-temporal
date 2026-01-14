@@ -1,14 +1,14 @@
-# ADR-9 – Versioning Strategy (Semantic Versioning for .NET Libraries)
+# ADR-8 – Versioning Strategy (Semantic Versioning for .NET Libraries)
 
 ## Status
 Accepted
 
 ## Context
-Microsoft recommends that .NET libraries follow Semantic Versioning (SemVer) to communicate compatibility, breaking changes, and evolution of the public API.  
-The official guidance emphasizes using MAJOR.MINOR.PATCH to indicate the nature of changes, rather than coupling library versions to .NET runtime versions.  
+Microsoft recommends that .NET libraries follow Semantic Versioning (SemVer) to communicate compatibility, breaking changes, and evolution of the public API.
+The official guidance emphasizes using MAJOR.MINOR.PATCH to indicate the nature of changes, rather than coupling library versions to .NET runtime versions.
 Reference: https://learn.microsoft.com/en-us/dotnet/standard/library-guidance/versioning
 
-Rebels.Temporal is intended to be stable, predictable, and easy for consumers to adopt.  
+Rebels.Temporal is intended to be stable, predictable, and easy for consumers to adopt.
 Following true SemVer makes compatibility expectations clear and avoids confusion when future .NET versions are released.
 
 ## Decision
@@ -24,5 +24,5 @@ The version number will **not** be tied to the .NET runtime version (e.g., .NET 
 - Consumers clearly understand whether an upgrade is safe based on SemVer semantics.
 - The library remains compatible across multiple .NET runtime versions unless API-breaking changes require otherwise.
 - Breaking changes are intentionally grouped into major releases.
-- Versioning aligns with Microsoft’s official recommendations for .NET libraries.
+- Versioning aligns with Microsoft's official recommendations for .NET libraries.
 - Future .NET runtime releases do not force artificial version bumps in the library.

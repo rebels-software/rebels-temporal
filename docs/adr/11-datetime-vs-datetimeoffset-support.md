@@ -1,4 +1,4 @@
-# ADR-14 — DateTime vs DateTimeOffset Support
+# ADR-11 — DateTime vs DateTimeOffset Support
 
 ## Status
 
@@ -12,18 +12,17 @@ However, deterministic temporal comparison requires a single, unambiguous time r
 Supporting both timestamp types introduces complexity:
 - DateTime may have Kind.Local, Kind.Utc, or Kind.Unspecified, which can lead to silent and incorrect comparison results.
 - Converting DateTime to DateTimeOffset requires selecting an offset, which cannot be inferred reliably.
-- Handling two APIs increases cognitive load, encourages misuse, and complicates Source Generator logic.
+- Handling two APIs increases cognitive load, encourages misuse, and complicates implementation.
 - To ensure correctness and maintain clean extensibility, the library must expose a single timestamp type.
 
 ## Decision
 
 The library will use DateTimeOffset as the only timestamp type across all public APIs, including:
-- IMatchableByPoint.At
-- IMatchableByInterval.Start
-- IMatchableByInterval.End
+- `ITemporalPoint.At`
+- `ITemporalInterval.Start`
+- `ITemporalInterval.End`
 - all future timestamp-based interfaces
 - match strategies and relations
-- any generated code that operates on time values
 
 The library will not perform implicit DateTime → DateTimeOffset conversion.
 
@@ -33,7 +32,7 @@ This ensures:
 - precision,
 - timezone awareness,
 - deterministic behavior,
-- predictability in both runtime logic and generated code.
+- predictability in runtime logic.
 
 ## Consequences
 
@@ -42,7 +41,6 @@ This ensures:
 - A single, unambiguous model for timestamps across entire library.
 - Eliminates ambiguity caused by DateTimeKind and DST transitions.
 - Greatly simplifies implementation and improves safety.
-- Reduces branching and complexity in the Source Generator.
 - Matches real-world IoT and distributed system best practices.
 - Prevents silent bugs caused by implicit conversions.
 
@@ -66,4 +64,4 @@ var dto = new DateTimeOffset(dt);
 
 - Offering dual interfaces (DateTime and DateTimeOffset)
 
-   Rejected due to API expansion, generator duplication, and no meaningful user benefit.
+   Rejected due to API expansion and no meaningful user benefit.

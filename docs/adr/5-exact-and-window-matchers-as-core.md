@@ -1,4 +1,4 @@
-# ADR-6 – Exact Matching and Window Matching as Core Matchers
+# ADR-5 – Exact Matching and Window Matching as Core Matchers
 
 ## Status
 Accepted

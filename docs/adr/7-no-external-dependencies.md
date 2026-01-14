@@ -1,4 +1,4 @@
-# ADR-8 – No External Dependencies Beyond .NET BCL
+# ADR-7 – No External Dependencies Beyond .NET BCL
 
 ## Status
 Accepted
