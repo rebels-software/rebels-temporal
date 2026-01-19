@@ -277,7 +277,6 @@ public static class MatchTemporal
         where TCandidate : ITemporalInterval
     {
         var anchorTolerance = policy.AnchorTolerance;
-        var allowedRelations = policy.AllowedTemporalRelations;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -290,16 +289,12 @@ public static class MatchTemporal
             {
                 var candidate = candidates[j];
 
-                // Point (with tolerance) becomes an interval [windowStart, windowEnd]
-                // Compute Allen relation between this interval and the candidate interval
-                var relation = DetermineAllenRelation(
-                    windowStart, windowEnd,
-                    candidate.Start, candidate.End);
-
-                // Check if this relation is allowed
-                if (IsRelationAllowed(relation, allowedRelations))
+                // Point-to-Interval match: the point's tolerance window must intersect with the interval
+                // Intersection occurs when: windowStart <= candidate.End AND windowEnd >= candidate.Start
+                if (windowStart <= candidate.End && windowEnd >= candidate.Start)
                 {
-                    buffer.Add(anchor, candidate, MatchType.PointInInterval, relation);
+                    // PointInInterval does not store relation (per INV-008)
+                    buffer.Add(anchor, candidate, MatchType.PointInInterval);
                 }
             }
         }
@@ -318,7 +313,6 @@ public static class MatchTemporal
         where TCandidate : ITemporalPoint
     {
         var candidateTolerance = policy.CandidateTolerance;
-        var allowedRelations = policy.AllowedTemporalRelations;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -333,15 +327,12 @@ public static class MatchTemporal
                 var candidateWindowStart = candidateTime - candidateTolerance.Before;
                 var candidateWindowEnd = candidateTime + candidateTolerance.After;
 
-                // Compute Allen relation between anchor interval and candidate interval
-                var relation = DetermineAllenRelation(
-                    anchor.Start, anchor.End,
-                    candidateWindowStart, candidateWindowEnd);
-
-                // Check if this relation is allowed
-                if (IsRelationAllowed(relation, allowedRelations))
+                // Interval-to-Point match: the candidate's tolerance window must intersect with the anchor interval
+                // Intersection occurs when: anchor.Start <= candidateWindowEnd AND anchor.End >= candidateWindowStart
+                if (anchor.Start <= candidateWindowEnd && anchor.End >= candidateWindowStart)
                 {
-                    buffer.Add(anchor, candidate, MatchType.PointInInterval, relation);
+                    // PointInInterval does not store relation (per INV-008)
+                    buffer.Add(anchor, candidate, MatchType.PointInInterval);
                 }
             }
         }
@@ -361,7 +352,7 @@ public static class MatchTemporal
     {
         var allowedRelations = policy.AllowedTemporalRelations;
 
-        // Fast-path: if all relations are allowed, skip relation determination
+        // Fast-path: if all relations are allowed, match all pairs (all 13 Allen relations)
         if (allowedRelations == AllowedRelations.Any)
         {
             for (int i = 0; i < anchors.Length; i++)
@@ -372,15 +363,10 @@ public static class MatchTemporal
                 {
                     var candidate = candidates[j];
 
-                    // Simple overlap check: intervals relate if they're not completely disjoint
-                    // (Before and After are the only relations that don't overlap when touching is considered)
-                    if (anchor.Start <= candidate.End && anchor.End >= candidate.Start)
-                    {
-                        var relation = DetermineAllenRelation(
-                            anchor.Start, anchor.End,
-                            candidate.Start, candidate.End);
-                        buffer.Add(anchor, candidate, MatchType.Interval, relation);
-                    }
+                    var relation = DetermineAllenRelation(
+                        anchor.Start, anchor.End,
+                        candidate.Start, candidate.End);
+                    buffer.Add(anchor, candidate, MatchType.Interval, relation);
                 }
             }
         }
@@ -478,20 +464,30 @@ public static class MatchTemporal
         DateTimeOffset bStart,
         DateTimeOffset bEnd)
     {
+        // First check for completely disjoint intervals (Before/After)
         if (aEnd < bStart) return TemporalRelation.Before;
-        if (aEnd == bStart) return TemporalRelation.Meets;
         if (aStart > bEnd) return TemporalRelation.After;
-        if (aStart == bEnd) return TemporalRelation.MetBy;
 
+        // Check for exact equality first (handles zero-duration intervals correctly)
         if (aStart == bStart && aEnd == bEnd) return TemporalRelation.Equal;
+
+        // Check for shared start (Starts/StartedBy) - must come before Meets check
         if (aStart == bStart && aEnd < bEnd) return TemporalRelation.Starts;
         if (aStart == bStart && aEnd > bEnd) return TemporalRelation.StartedBy;
+
+        // Check for shared end (Finishes/FinishedBy) - must come before MetBy check
         if (aEnd == bEnd && aStart > bStart) return TemporalRelation.Finishes;
         if (aEnd == bEnd && aStart < bStart) return TemporalRelation.FinishedBy;
 
+        // Check for touching intervals (Meets/MetBy)
+        if (aEnd == bStart) return TemporalRelation.Meets;
+        if (aStart == bEnd) return TemporalRelation.MetBy;
+
+        // Check for containment (During/Contains)
         if (aStart > bStart && aEnd < bEnd) return TemporalRelation.During;
         if (aStart < bStart && aEnd > bEnd) return TemporalRelation.Contains;
 
+        // Remaining cases are overlaps
         if (aStart < bStart) return TemporalRelation.Overlaps;
         return TemporalRelation.OverlappedBy;
     }
