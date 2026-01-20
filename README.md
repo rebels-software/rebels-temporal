@@ -72,7 +72,7 @@ Rebels.Temporal defines a small, precise vocabulary for working with temporal da
 
 | Concept           | Definition                                                                 | Description                                                                                                                             | Represented By           |
 |-------------------|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
-| **Temporal Event** | A point-in-time occurrence that has a single timestamp.                     | Used for exact matching, correlation across sources, window-based analysis, or ordering semantics.                                 | `ITemporalPint`          |
+| **Temporal Event** | A point-in-time occurrence that has a single timestamp.                     | Used for exact matching, correlation across sources, window-based analysis, or ordering semantics.                                 | `ITemporalPoint`          |
 | **Temporal Period** | A real-world domain concept describing something that *lasts* from a start time to an end time. | Examples: charging session, machine running time, presence in a room, operation cycle. In domain models these carry semantics.     |  `ITemporalInterval` |
 | **Time Window**     | An analytical time range centered around (or derived from) an anchor event. | Not a domain occurrence. Used purely for correlation: e.g., “±15s around event A”. Windows do not represent system states.          | `TimeWindow`              |
 | **Temporal Relations** | Descriptions of how two events or intervals relate in time.                | Includes relations from interval algebra (before, after, overlaps, contains, meets, intersects). Used by matchers and analyzers.    | `TemporalRelation` |
@@ -139,7 +139,7 @@ var buffer = new MatchPair<SensorReading, SensorReading>[100];
 var matchBuffer = new MatchBuffer<SensorReading, SensorReading> { Pairs = buffer };
 
 // Perform matching using fluent API
-int matchCount = TemporalMatcher.Points.With.Points(
+int matchCount = MatchTemporal.Points.With.Points(
     telemetryEvents,
     commandEvents,
     policy,
@@ -178,7 +178,7 @@ var policy = new MatchPolicy
 var buffer = new MatchPair<SensorReading, DeviceSession>[100];
 var matchBuffer = new MatchBuffer<SensorReading, DeviceSession> { Pairs = buffer };
 
-int matchCount = TemporalMatcher.Points.With.Intervals(
+int matchCount = MatchTemporal.Points.With.Intervals(
     events,
     sessions,
     policy,
@@ -212,7 +212,7 @@ var policy = new MatchPolicy
 var buffer = new MatchPair<DeviceSession, DeviceSession>[100];
 var matchBuffer = new MatchBuffer<DeviceSession, DeviceSession> { Pairs = buffer };
 
-int matchCount = TemporalMatcher.Intervals.With.Intervals(
+int matchCount = MatchTemporal.Intervals.With.Intervals(
     chargingSessions,
     usageSessions,
     policy,
@@ -248,45 +248,41 @@ var candidatesSortedPolicy = new MatchPolicy
 
 This repository is optimized for contributing with help from modern LLM-based assistants (ChatGPT, Claude, Mistral, Gemini, etc.).
 
-If you are a new contributor and want your AI model to fully understand the project, please follow these steps:
+### Initialization
 
-1. **Load the repository** into your AI model so it can read the codebase and documentation.
-2. **Copy and paste the initialization prompt below** into your AI assistant.
-3. **Tip:** Most AI assistants will perform better if you explicitly ask them to *read all files first* before answering any question.
+Use the `/init` command to load the full project context into your AI assistant.
 
-### AI Initialization Prompt
+The command will load:
+- Repository structure and documentation
+- Architecture Decision Records (ADRs)
+- System invariants
+- Source code with domain model
 
-```text
-You are assisting as a contributor to the open-source library Rebels.Temporal.
-
-Load and study the following repository structure, including its documentation and architecture decision records:
-- README.md
-- /docs (all files)
-- /docs/adr (all Architecture Decision Records)
-- /docs/invariants (all non-negotiable rules of the system)
-- /Domain and its subfolders
-- /Engine and all public API types
-
-Your goals:
-1. Understand the temporal domain model used by the library, including:
-   - Temporal Events
-   - Temporal Periods vs Temporal Intervals
-   - Time Windows
-   - Temporal Relations
-2. Understand the design philosophy, performance principles, and boundaries of the project.
-3. Respect all decisions declared in ADRs.
-4. Provide answers and code suggestions consistent with the existing architecture.
-5. When asked about new features, propose solutions aligned with the project’s domain model and design constraints.
-
-After loading all documents, acknowledge with:
-"Rebels.Temporal context loaded and understood. Ready to contribute."
+After initialization, the AI will confirm with:
+```
+Rebels.Temporal context loaded and understood. Ready to contribute.
 ```
 
-Detailed usage examples and API documentation will be available soon in the /docs directory and GitHub Wiki.
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `/init` | Initialize LLM context — loads all documentation and code |
+| `/why`  | Explain design decisions — answers "why" questions about architecture |
+
+Full command documentation: [docs/COMMANDS.md](docs/COMMANDS.md)
+
+### Tips
+
+- Always run `/init` at the start of a new session
+- Use `/why` when you want to understand design decisions
+- AI assistants perform better when they read all files before answering
+
+Detailed usage examples and API documentation are available in the [/docs](docs/) directory.
 
 ## Architecture Decision Records (ADR)
 
-All architectural decisions for this project are documented in the `/adr` directory.
+All architectural decisions for this project are documented in the `/docs/adr` directory.
 
 If you contribute to this library, please read the ADRs before making changes,  
 and propose new ADRs for any significant decisions.

@@ -4,16 +4,16 @@
 
 | ID | Name | Summary |
 |----|------|---------|
-| [INV-001](INV-001-interval-start-end-constraint.md) | Interval Start-End Constraint | All intervals must satisfy `Start <= End` |
-| [INV-002](INV-002-datetimeoffset-only.md) | DateTimeOffset Only | All temporal values must be `DateTimeOffset` |
-| [INV-003](INV-003-no-allocations-in-hot-path.md) | No Allocations in Hot Path | Core algorithms must not allocate heap memory |
-| [INV-004](INV-004-single-namespace.md) | Single Namespace | All public types in `Rebels.Temporal` namespace |
-| [INV-005](INV-005-no-external-dependencies.md) | No External Dependencies | No NuGet packages beyond .NET BCL |
-| [INV-006](INV-006-allen-relations-exhaustive.md) | Allen Relations Exhaustive | Two intervals relate by exactly one of 13 relations |
-| [INV-007](INV-007-single-anchor-candidate-pair.md) | Single Anchor-Candidate Pair | Each match operates on one anchor and one candidate type |
-| [INV-008](INV-008-matchpair-relation-consistency.md) | MatchPair Relation Consistency | Relation required iff MatchType is Interval |
-| [INV-009](INV-009-timetolerance-non-negative.md) | TimeTolerance Non-Negative | Tolerance values must be >= 0 |
-| [INV-010](INV-010-input-ordering-validation.md) | Input Ordering Validation | Declared ordering must be validated at runtime |
+| [INV-1](1-interval-start-end-constraint.md) | Interval Start-End Constraint | All intervals must satisfy `Start <= End` |
+| [INV-2](2-datetimeoffset-only.md) | DateTimeOffset Only | All temporal values must be `DateTimeOffset` |
+| [INV-3](3-no-allocations-in-hot-path.md) | No Allocations in Hot Path | Core algorithms must not allocate heap memory |
+| [INV-4](4-single-namespace.md) | Single Namespace | All public types in `Rebels.Temporal` namespace |
+| [INV-5](5-no-external-dependencies.md) | No External Dependencies | No NuGet packages beyond .NET BCL |
+| [INV-6](6-allen-relations-exhaustive.md) | Allen Relations Exhaustive | Two intervals relate by exactly one of 13 relations |
+| [INV-7](7-single-anchor-candidate-pair.md) | Single Anchor-Candidate Pair | Each match operates on one anchor and one candidate type |
+| [INV-8](8-matchpair-relation-consistency.md) | MatchPair Relation Consistency | Relation required iff MatchType is Interval |
+| [INV-9](9-timetolerance-non-negative.md) | TimeTolerance Non-Negative | Tolerance values must be >= 0 |
+| [INV-10](10-input-ordering-validation.md) | Input Ordering Validation | Declared ordering must be validated at runtime |
 
 ---
 
