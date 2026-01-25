@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2026 Rebels Software
+// Copyright (C) 2026 Rebels Software
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Rebels.Temporal;
+namespace Rebels.Temporal.Tests.TestData;
 
-public class Example
+public readonly record struct TestEvent(DateTimeOffset Timestamp, string Name) : ITemporalPoint
 {
-    public static int Sum(int x, int y) => x + y;
+    public DateTimeOffset At => Timestamp;
 }

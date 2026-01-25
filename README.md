@@ -1,8 +1,8 @@
 # Rebels.Temporal
 
-[![Build](https://github.com/rebels-software/csharp-opensource-class-library-template/actions/workflows/dotnet-library-build.yml/badge.svg)](https://github.com/rebels-software/csharp-opensource-class-library-template/actions/workflows/dotnet-library-build.yml)
+[![Build](https://github.com/rebels-software/rebels-temporal/actions/workflows/dotnet-library-build.yml/badge.svg)](https://github.com/rebels-software/rebels-temporal/actions/workflows/dotnet-library-build.yml)
 
-[![codecov](https://codecov.io/gh/rebels-software/csharp-opensource-class-library-template/graph/badge.svg?token=MJBW9OV494)](https://codecov.io/gh/rebels-software/csharp-opensource-class-library-template)
+[![codecov](https://codecov.io/gh/rebels-software/rebels-temporal/graph/badge.svg)](https://codecov.io/gh/rebels-software/rebels-temporal)
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 
@@ -72,16 +72,60 @@ Rebels.Temporal defines a small, precise vocabulary for working with temporal da
 
 | Concept           | Definition                                                                 | Description                                                                                                                             | Represented By           |
 |-------------------|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
-| **Temporal Event** | A point-in-time occurrence that has a single timestamp.                     | Used for exact matching, correlation across sources, window-based analysis, or ordering semantics.                                 | `ITemporalEvent`          |
+| **Temporal Event** | A point-in-time occurrence that has a single timestamp.                     | Used for exact matching, correlation across sources, window-based analysis, or ordering semantics.                                 | `ITemporalPoint`          |
 | **Temporal Period** | A real-world domain concept describing something that *lasts* from a start time to an end time. | Examples: charging session, machine running time, presence in a room, operation cycle. In domain models these carry semantics.     |  `ITemporalInterval` |
 | **Time Window**     | An analytical time range centered around (or derived from) an anchor event. | Not a domain occurrence. Used purely for correlation: e.g., “±15s around event A”. Windows do not represent system states.          | `TimeWindow`              |
 | **Temporal Relations** | Descriptions of how two events or intervals relate in time.                | Includes relations from interval algebra (before, after, overlaps, contains, meets, intersects). Used by matchers and analyzers.    | `TemporalRelation` |
 
 
+## Where This Library Fits
+
+Rebels.Temporal is designed to be used in the **application layer** of your solution, bridging infrastructure (where events arrive) and domain logic (where business rules apply):
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      YOUR SOLUTION                          │
+├─────────────────────────────────────────────────────────────┤
+│  Infrastructure Layer                                       │
+│  (Kafka, Azure IoT Hub, MQTT, databases)                    │
+│  └─► Receives raw events, deserializes data                 │
+├─────────────────────────────────────────────────────────────┤
+│  Application Layer                                          │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  Rebels.Temporal                                       │ │
+│  │  └─► Correlates events temporally                      │ │
+│  │  └─► Finds matches based on time windows               │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  └─► Orchestrates matching across sources                   │
+│  └─► Prepares correlated data for domain processing         │
+├─────────────────────────────────────────────────────────────┤
+│  Domain Layer                                               │
+│  └─► Applies business rules to matched events               │
+│  └─► Makes decisions based on correlations                  │
+│  └─► Contains your domain-specific logic                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### The library does NOT:
+- Connect to message brokers, IoT platforms, or databases
+- Deserialize or transform your event data
+- Apply business rules to matches
+- Manage event streams or subscriptions
+- Provide integration packages for specific platforms
+
+### The library DOES:
+- Provide high-performance temporal matching algorithms
+- Define clear temporal semantics (Allen's Interval Algebra)
+- Give you full control over memory and performance
+- Work with any event types that implement `ITemporalPoint` or `ITemporalInterval`
+
+This separation ensures that Rebels.Temporal remains focused, testable, and free of external dependencies, while your solution retains full control over infrastructure and business logic.
+
+
 ## Getting Started
 
 ### Prerequisites
-- [.NET SDK 8.0+](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- [.NET SDK 9.0+](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 
 ### Installation
 
@@ -89,48 +133,230 @@ Rebels.Temporal defines a small, precise vocabulary for working with temporal da
 dotnet add package Rebels.Temporal
 ```
 
+### Quick Start
+
+#### Define Your Temporal Types
+
+```csharp
+using Rebels.Temporal;
+
+// Point-in-time events
+public readonly record struct SensorReading(DateTimeOffset Timestamp, double Value) : ITemporalPoint
+{
+    public DateTimeOffset At => Timestamp;
+}
+
+// Interval-based events
+public readonly record struct DeviceSession(DateTimeOffset StartTime, DateTimeOffset EndTime, string DeviceId) : ITemporalInterval
+{
+    public DateTimeOffset Start => StartTime;
+    public DateTimeOffset End => EndTime;
+}
+```
+
+#### Match Point-to-Point Events
+
+```csharp
+// Create test data
+var telemetryEvents = new[]
+{
+    new SensorReading(DateTimeOffset.Now, 23.5),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(5), 24.1),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(10), 23.8)
+};
+
+var commandEvents = new[]
+{
+    new SensorReading(DateTimeOffset.Now.AddMilliseconds(50), 0),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(10), 0)
+};
+
+// Configure matching policy
+var policy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromMilliseconds(100)),
+    InputOrdering = InputOrdering.None
+};
+
+// Allocate buffer for results
+var buffer = new MatchPair<SensorReading, SensorReading>[100];
+var visitor = new BufferVisitor<SensorReading, SensorReading>(buffer);
+
+// Perform matching using fluent API
+MatchTemporal.Points.With.Points(
+    telemetryEvents,
+    commandEvents,
+    policy,
+    ref visitor);
+
+// Process results
+for (int i = 0; i < visitor.MatchCount; i++)
+{
+    var match = buffer[i];
+    Console.WriteLine($"Matched: {match.Anchor.Value} ↔ {match.Candidate.Value} " +
+                     $"(Type: {match.MatchType})");
+}
+```
+
+#### Match Point-to-Interval
+
+```csharp
+var events = new[]
+{
+    new SensorReading(DateTimeOffset.Now, 23.5),
+    new SensorReading(DateTimeOffset.Now.AddSeconds(5), 24.1)
+};
+
+var sessions = new[]
+{
+    new DeviceSession(DateTimeOffset.Now.AddSeconds(-1), DateTimeOffset.Now.AddSeconds(3), "Device1"),
+    new DeviceSession(DateTimeOffset.Now.AddSeconds(4), DateTimeOffset.Now.AddSeconds(8), "Device2")
+};
+
+var policy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.None,
+    AllowedTemporalRelations = AllowedRelations.Any
+};
+
+var buffer = new MatchPair<SensorReading, DeviceSession>[100];
+var visitor = new BufferVisitor<SensorReading, DeviceSession>(buffer);
+
+MatchTemporal.Points.With.Intervals(
+    events,
+    sessions,
+    policy,
+    ref visitor);
+```
+
+#### Match Interval-to-Interval with Allen Relations
+
+```csharp
+var chargingSessions = new[]
+{
+    new DeviceSession(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1), "Device1"),
+    new DeviceSession(DateTimeOffset.Now.AddMinutes(30), DateTimeOffset.Now.AddHours(2), "Device2")
+};
+
+var usageSessions = new[]
+{
+    new DeviceSession(DateTimeOffset.Now.AddMinutes(15), DateTimeOffset.Now.AddMinutes(45), "Usage1"),
+    new DeviceSession(DateTimeOffset.Now.AddHours(1.5), DateTimeOffset.Now.AddHours(3), "Usage2")
+};
+
+var policy = new MatchPolicy
+{
+    // Only match intervals that overlap or one contains the other
+    AllowedTemporalRelations = AllowedRelations.Overlaps |
+                              AllowedRelations.OverlappedBy |
+                              AllowedRelations.Contains |
+                              AllowedRelations.During
+};
+
+var buffer = new MatchPair<DeviceSession, DeviceSession>[100];
+var visitor = new BufferVisitor<DeviceSession, DeviceSession>(buffer);
+
+MatchTemporal.Intervals.With.Intervals(
+    chargingSessions,
+    usageSessions,
+    policy,
+    ref visitor);
+
+// Access Allen relation for each match
+for (int i = 0; i < visitor.MatchCount; i++)
+{
+    var match = buffer[i];
+    Console.WriteLine($"Interval relation: {match.Relation}");
+}
+```
+
+#### Performance Optimization with Sorted Data
+
+The `InputOrdering` setting has a **dramatic impact** on performance. Always prefer sorted data when possible.
+
+##### Benchmark Results (2,000 anchors × 2,000 candidates)
+
+| InputOrdering | Algorithm | Time | Complexity |
+|---------------|-----------|------|------------|
+| `Both` | Dual-pointer scan | **56 μs** | O(n+m) |
+| `None` | Nested loops | **14.4 ms** | O(n×m) |
+
+**Sorted data is ~255x faster.** For larger datasets the difference grows exponentially:
+
+| Dataset Size | Sorted O(n+m) | Unsorted O(n×m) |
+|--------------|---------------|-----------------|
+| 2k × 2k | 56 μs | 14 ms |
+| 100k × 100k | ~3 ms | ~46 seconds |
+
+##### Recommendation
+
+```csharp
+// RECOMMENDED: Pre-sort your data for best performance
+var sortedAnchors = anchors.OrderBy(x => x.At).ToArray();
+var sortedCandidates = candidates.OrderBy(x => x.At).ToArray();
+
+var policy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(1)),
+    InputOrdering = InputOrdering.Both  // O(n+m) dual-pointer scan
+};
+
+// If only candidates come from a sorted source (e.g., database with ORDER BY)
+var candidatesSortedPolicy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(1)),
+    InputOrdering = InputOrdering.Candidates  // O(n log m) binary search
+};
+
+// Use None only when sorting is impossible or data is very small
+var unsortedPolicy = new MatchPolicy
+{
+    InputOrdering = InputOrdering.None  // O(n×m) - avoid for large datasets
+};
+```
+
+> **Note:** The cost of sorting (`OrderBy`) is O(n log n), which is negligible compared to the gains from O(n+m) matching.
+
 ## Working with AI Assistants
 
 This repository is optimized for contributing with help from modern LLM-based assistants (ChatGPT, Claude, Mistral, Gemini, etc.).
 
-If you are a new contributor and want your AI model to fully understand the project, please follow these steps:
+### Initialization
 
-1. **Load the repository** into your AI model so it can read the codebase and documentation.
-2. **Copy and paste the initialization prompt below** into your AI assistant.
-3. **Tip:** Most AI assistants will perform better if you explicitly ask them to *read all files first* before answering any question.
+Use the `/init` command to load the full project context into your AI assistant.
 
-### AI Initialization Prompt
+The command will load:
+- Repository structure and documentation
+- Architecture Decision Records (ADRs)
+- System invariants
+- Source code with domain model
 
-```text
-You are assisting as a contributor to the open-source library Rebels.Temporal.
-
-Load and study the following repository structure, including its documentation and architecture decision records:
-- README.md
-- /docs (all files)
-- /adr (all Architecture Decision Records)
-- /Domain and its subfolders
-- /Engine and all public API types
-
-Your goals:
-1. Understand the temporal domain model used by the library, including:
-   - Temporal Events
-   - Temporal Periods vs Temporal Intervals
-   - Time Windows
-   - Temporal Relations
-2. Understand the design philosophy, performance principles, and boundaries of the project.
-3. Respect all decisions declared in ADRs.
-4. Provide answers and code suggestions consistent with the existing architecture.
-5. When asked about new features, propose solutions aligned with the project’s domain model and design constraints.
-
-After loading all documents, acknowledge with:
-"Rebels.Temporal context loaded and understood. Ready to contribute."
+After initialization, the AI will confirm with:
+```
+Rebels.Temporal context loaded and understood. Ready to contribute.
 ```
 
-Detailed usage examples and API documentation will be available soon in the /docs directory and GitHub Wiki.
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `/init` | Initialize LLM context — loads all documentation and code |
+| `/why`  | Explain design decisions — answers "why" questions about architecture |
+| `/benchmark` | Run performance benchmarks — measure and compare implementations |
+
+Full command documentation: [docs/COMMANDS.md](docs/COMMANDS.md)
+
+### Tips
+
+- Always run `/init` at the start of a new session
+- Use `/why` when you want to understand design decisions
+- AI assistants perform better when they read all files before answering
+
+Detailed usage examples and API documentation are available in the [/docs](docs/) directory.
 
 ## Architecture Decision Records (ADR)
 
-All architectural decisions for this project are documented in the `/adr` directory.
+All architectural decisions for this project are documented in the `/docs/adr` directory.
 
 If you contribute to this library, please read the ADRs before making changes,  
 and propose new ADRs for any significant decisions.
