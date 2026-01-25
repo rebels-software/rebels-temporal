@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Rebels Software
+// Copyright (C) 2026 Rebels Software
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -209,6 +209,86 @@ public class ZeroDurationIntervalTests : MatchingTestBase
         .Then
             .TotalMatchCount(1)
             .MatchHasRelation(TemporalRelation.After);
+    }
+
+    #endregion
+
+    #region Meets/MetBy Edge Cases with Zero-Duration Intervals
+
+    [Test]
+    public void IntervalToInterval_Regular_Interval_Ending_At_Zero_Duration_Should_Match_FinishedBy()
+    {
+        // Regular interval [0, 10] with zero-duration [10, 10]
+        // Since zero-duration ends at same point as anchor, this is FinishedBy (not Meets)
+        // FinishedBy: anchor.End == candidate.End AND candidate.Start > anchor.Start
+        Given
+            .AnchorIntervals((0, 10))
+            .CandidateIntervals((10, 10))
+        .When
+            .MatchIntervalToIntervalIsCalled(TestPolicies.ExactMatch)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(TemporalRelation.FinishedBy);
+    }
+
+    [Test]
+    public void IntervalToInterval_Zero_Duration_At_End_Of_Regular_Interval_Should_Match_Finishes()
+    {
+        // Zero-duration [20, 20] at end of regular interval [10, 20]
+        // Finishes: anchor.End == candidate.End AND anchor.Start > candidate.Start
+        Given
+            .AnchorIntervals((20, 20))
+            .CandidateIntervals((10, 20))
+        .When
+            .MatchIntervalToIntervalIsCalled(TestPolicies.ExactMatch)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(TemporalRelation.Finishes);
+    }
+
+    [Test]
+    public void IntervalToInterval_Regular_Interval_StartedBy_Zero_Duration()
+    {
+        // Regular interval [10, 20] with zero-duration [10, 10] at its start
+        // StartedBy: anchor.Start == candidate.Start AND anchor.End > candidate.End
+        Given
+            .AnchorIntervals((10, 20))
+            .CandidateIntervals((10, 10))
+        .When
+            .MatchIntervalToIntervalIsCalled(TestPolicies.ExactMatch)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(TemporalRelation.StartedBy);
+    }
+
+    [Test]
+    public void IntervalToInterval_Two_Adjacent_Zero_Duration_Intervals_With_Gap()
+    {
+        // Two zero-duration intervals: [5, 5] and [10, 10] with gap between them
+        // Should be Before relation
+        Given
+            .AnchorIntervals((5, 5))
+            .CandidateIntervals((10, 10))
+        .When
+            .MatchIntervalToIntervalIsCalled(TestPolicies.ExactMatch)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(TemporalRelation.Before);
+    }
+
+    [Test]
+    public void IntervalToInterval_Zero_Duration_Immediately_Before_Another_Zero_Duration()
+    {
+        // Two zero-duration intervals at same instant: [10, 10] and [10, 10]
+        // Should be Equal (same instant)
+        Given
+            .AnchorIntervals((10, 10))
+            .CandidateIntervals((10, 10))
+        .When
+            .MatchIntervalToIntervalIsCalled(TestPolicies.ExactMatch)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(TemporalRelation.Equal);
     }
 
     #endregion

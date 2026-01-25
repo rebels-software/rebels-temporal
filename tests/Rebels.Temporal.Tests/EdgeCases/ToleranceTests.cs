@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Rebels Software
+// Copyright (C) 2026 Rebels Software
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -25,94 +25,21 @@ public class ToleranceTests : MatchingTestBase
 {
     #region Asymmetric Anchor Tolerance
 
-    [Test]
-    public void AsymmetricTolerance_Should_Match_Within_Before_Window()
+    [TestCase(9,  0, Description = "Point at 9 should match with point at 20 when tolerance is [10,5] - before lower boundary")]
+    [TestCase(10, 1, Description = "Point at 10 should match with point at 20 when tolerance is [10,5] - exactly at lower boundary")]
+    [TestCase(12, 1, Description = "Point at 12 should match with point at 20 when tolerance is [10,5] - within")]
+    [TestCase(20, 1, Description = "Point at 20 should match with point at 20 when tolerance is [10,5] - exact anchor")]
+    [TestCase(25, 1, Description = "Point at 25 should match with point at 20 when tolerance is [10,5] - exactly at upper boundary")]
+    [TestCase(26, 0, Description = "Point at 26 should not match with point at 20 when tolerance is [10,5] - after")]
+    public void AsymmetricTolerance_Points_Tests(int candidate, int expected)
     {
-        // AsymmetricTolerance: 10s before, 5s after
-        // Anchor at 20, window is [10, 25]
-        // Candidate at 12 (within before window)
         Given
             .AnchorOffsets(20)
-            .CandidateOffsets(12)
+            .CandidateOffsets(candidate)
         .When
-            .MatchPointToPointIsCalled(TestPolicies.AsymmetricTolerance)
+            .MatchPointToPointIsCalled(TestPolicies.AsymmetricAnchorTolerance)
         .Then
-            .TotalMatchCount(1);
-    }
-
-    [Test]
-    public void AsymmetricTolerance_Should_Match_Within_After_Window()
-    {
-        // AsymmetricTolerance: 10s before, 5s after
-        // Anchor at 20, window is [10, 25]
-        // Candidate at 24 (within after window)
-        Given
-            .AnchorOffsets(20)
-            .CandidateOffsets(24)
-        .When
-            .MatchPointToPointIsCalled(TestPolicies.AsymmetricTolerance)
-        .Then
-            .TotalMatchCount(1);
-    }
-
-    [Test]
-    public void AsymmetricTolerance_Should_Match_At_Exact_Before_Boundary()
-    {
-        // AsymmetricTolerance: 10s before, 5s after
-        // Anchor at 20, window is [10, 25]
-        // Candidate at 10 (exactly at before boundary)
-        Given
-            .AnchorOffsets(20)
-            .CandidateOffsets(10)
-        .When
-            .MatchPointToPointIsCalled(TestPolicies.AsymmetricTolerance)
-        .Then
-            .TotalMatchCount(1);
-    }
-
-    [Test]
-    public void AsymmetricTolerance_Should_Match_At_Exact_After_Boundary()
-    {
-        // AsymmetricTolerance: 10s before, 5s after
-        // Anchor at 20, window is [10, 25]
-        // Candidate at 25 (exactly at after boundary)
-        Given
-            .AnchorOffsets(20)
-            .CandidateOffsets(25)
-        .When
-            .MatchPointToPointIsCalled(TestPolicies.AsymmetricTolerance)
-        .Then
-            .TotalMatchCount(1);
-    }
-
-    [Test]
-    public void AsymmetricTolerance_Should_Not_Match_Outside_Before_Boundary()
-    {
-        // AsymmetricTolerance: 10s before, 5s after
-        // Anchor at 20, window is [10, 25]
-        // Candidate at 9 (outside before boundary)
-        Given
-            .AnchorOffsets(20)
-            .CandidateOffsets(9)
-        .When
-            .MatchPointToPointIsCalled(TestPolicies.AsymmetricTolerance)
-        .Then
-            .TotalMatchCount(0);
-    }
-
-    [Test]
-    public void AsymmetricTolerance_Should_Not_Match_Outside_After_Boundary()
-    {
-        // AsymmetricTolerance: 10s before, 5s after
-        // Anchor at 20, window is [10, 25]
-        // Candidate at 26 (outside after boundary)
-        Given
-            .AnchorOffsets(20)
-            .CandidateOffsets(26)
-        .When
-            .MatchPointToPointIsCalled(TestPolicies.AsymmetricTolerance)
-        .Then
-            .TotalMatchCount(0);
+            .TotalMatchCount(expected);
     }
 
     #endregion
@@ -129,7 +56,7 @@ public class ToleranceTests : MatchingTestBase
             .AnchorOffsets(20)
             .CandidateIntervals((5, 12))
         .When
-            .MatchPointToIntervalIsCalled(TestPolicies.AsymmetricTolerance)
+            .MatchPointToIntervalIsCalled(TestPolicies.AsymmetricAnchorTolerance)
         .Then
             .TotalMatchCount(1);
     }
@@ -144,7 +71,7 @@ public class ToleranceTests : MatchingTestBase
             .AnchorOffsets(20)
             .CandidateIntervals((0, 5))
         .When
-            .MatchPointToIntervalIsCalled(TestPolicies.AsymmetricTolerance)
+            .MatchPointToIntervalIsCalled(TestPolicies.AsymmetricAnchorTolerance)
         .Then
             .TotalMatchCount(0);
     }
@@ -244,6 +171,182 @@ public class ToleranceTests : MatchingTestBase
             .CandidateOffsets(14)
         .When
             .MatchPointToPointIsCalled(TestPolicies.BothSidesTolerance)
+        .Then
+            .TotalMatchCount(0);
+    }
+
+    #endregion
+
+    #region ForwardOnly Tolerance
+
+    [Test]
+    public void ForwardOnly_Should_Match_Candidate_After_Anchor()
+    {
+        // ForwardOnly(5s): anchor=10, candidate=15 → match (exactly at boundary)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(15)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(1);
+    }
+
+    [Test]
+    public void ForwardOnly_Should_Match_Candidate_At_Same_Time()
+    {
+        // ForwardOnly(5s): anchor=10, candidate=10 → match (same time)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(10)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(1);
+    }
+
+    [Test]
+    public void ForwardOnly_Should_Not_Match_Candidate_Before_Anchor()
+    {
+        // ForwardOnly(5s): anchor=10, candidate=5 → no match (before anchor)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(5)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(0);
+    }
+
+    [Test]
+    public void ForwardOnly_Should_Not_Match_Candidate_Beyond_Window()
+    {
+        // ForwardOnly(5s): anchor=10, candidate=16 → no match (beyond window)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(16)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(0);
+    }
+
+    #endregion
+
+    #region BackwardOnly Tolerance
+
+    [Test]
+    public void BackwardOnly_Should_Match_Candidate_Before_Anchor()
+    {
+        // BackwardOnly(5s): anchor=10, candidate=5 → match (exactly at boundary)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(5)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(1);
+    }
+
+    [Test]
+    public void BackwardOnly_Should_Match_Candidate_At_Same_Time()
+    {
+        // BackwardOnly(5s): anchor=10, candidate=10 → match (same time)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(10)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(1);
+    }
+
+    [Test]
+    public void BackwardOnly_Should_Not_Match_Candidate_After_Anchor()
+    {
+        // BackwardOnly(5s): anchor=10, candidate=15 → no match (after anchor)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(15)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(0);
+    }
+
+    [Test]
+    public void BackwardOnly_Should_Not_Match_Candidate_Beyond_Window()
+    {
+        // BackwardOnly(5s): anchor=10, candidate=4 → no match (beyond window)
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(4)
+        .When
+            .MatchPointToPointIsCalled(policy)
         .Then
             .TotalMatchCount(0);
     }

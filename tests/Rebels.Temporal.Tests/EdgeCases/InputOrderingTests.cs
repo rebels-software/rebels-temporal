@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Rebels Software
+// Copyright (C) 2026 Rebels Software
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -216,6 +216,147 @@ public class InputOrderingTests : MatchingTestBase
             .MatchPointToPointIsCalled(TestPolicies.SortedCandidates)
         .Then
             .TotalMatchCount(1);
+    }
+
+    #endregion
+
+    #region Sorted Algorithms with Tolerance
+
+    [Test]
+    public void SortedCandidates_With_Symmetric_Tolerance_Should_Match_Multiple()
+    {
+        // Symmetric tolerance of 5s with sorted candidates
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.Candidates
+        };
+
+        // Anchor at 10, candidates at 5, 10, 15 (all within ±5s window)
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(5, 10, 15)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(3);
+    }
+
+    [Test]
+    public void BothSorted_With_Symmetric_Tolerance_Should_Match_Correctly()
+    {
+        // Symmetric tolerance of 5s with both sorted
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.Both
+        };
+
+        // Anchors at 10, 20, 30 with candidates at 12, 22, 32 (all within tolerance)
+        Given
+            .AnchorOffsets(10, 20, 30)
+            .CandidateOffsets(12, 22, 32)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(3);
+    }
+
+    [Test]
+    public void BothSorted_With_ForwardOnly_Tolerance_Should_Match_Only_Later_Candidates()
+    {
+        // ForwardOnly tolerance of 5s - only matches candidates after anchor
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.Both
+        };
+
+        // Anchor at 10, candidates at 8, 10, 12 (only 10 and 12 should match)
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(8, 10, 12)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(2); // 10 and 12 match
+    }
+
+    [Test]
+    public void BothSorted_With_BackwardOnly_Tolerance_Should_Match_Only_Earlier_Candidates()
+    {
+        // BackwardOnly tolerance of 5s - only matches candidates before anchor
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.Both
+        };
+
+        // Anchor at 10, candidates at 6, 8, 10, 12 (only 6, 8, and 10 should match)
+        Given
+            .AnchorOffsets(10)
+            .CandidateOffsets(6, 8, 10, 12)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(3); // 6, 8, and 10 match
+    }
+
+    [Test]
+    public void SortedCandidates_With_Asymmetric_Tolerance_Should_Match_Asymmetric_Window()
+    {
+        // Asymmetric tolerance: 10s before, 5s after
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = new TimeTolerance(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.Candidates
+        };
+
+        // Anchor at 20, window is [10, 25]
+        // Candidates at 5, 10, 15, 20, 25, 30
+        // Matches: 10, 15, 20, 25 (4 matches)
+        Given
+            .AnchorOffsets(20)
+            .CandidateOffsets(5, 10, 15, 20, 25, 30)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(4);
+    }
+
+    [Test]
+    public void BothSorted_With_Tolerance_And_Multiple_Anchors()
+    {
+        // Multiple anchors with overlapping tolerance windows
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(5)),
+            CandidateTolerance = TimeTolerance.None,
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.Both
+        };
+
+        // Anchors at 10, 12 (windows overlap: [5,15] and [7,17])
+        // Candidates at 8, 10, 12, 14
+        // Anchor 10 matches: 8, 10, 12, 14 (all within [5,15])
+        // Anchor 12 matches: 8, 10, 12, 14 (all within [7,17])
+        Given
+            .AnchorOffsets(10, 12)
+            .CandidateOffsets(8, 10, 12, 14)
+        .When
+            .MatchPointToPointIsCalled(policy)
+        .Then
+            .TotalMatchCount(8); // 4 matches per anchor
     }
 
     #endregion

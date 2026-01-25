@@ -475,3 +475,13 @@ Console.WriteLine($"Matches: {visitor.MatchCount}, Unmatched: {visitor.Unmatched
 | Allowed Relations | `AllowedRelations` | Filter for interval matching |
 | Match Visitor | `IMatchVisitor<T,U>` | Interface for receiving match results |
 | Buffer Visitor | `BufferVisitor<T,U>` | Reference implementation storing to buffer |
+
+---
+
+## See Also
+
+- [README.md](/README.md) — Library overview and usage examples
+- [DECISION-TREE.md](DECISION-TREE.md) — API selection guide
+- [COMMANDS.md](COMMANDS.md) — LLM command documentation
+- [ADRs](/docs/adr) — Architecture Decision Records
+- [Invariants](/docs/invariants) — Non-negotiable system rules

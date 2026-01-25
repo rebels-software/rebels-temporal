@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Rebels Software
+// Copyright (C) 2026 Rebels Software
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public static class TestPolicies
     /// <summary>
     /// Asymmetric tolerance: 10s before anchor, 5s after anchor, unsorted input.
     /// </summary>
-    public static MatchPolicy AsymmetricTolerance { get; } = new MatchPolicy
+    public static MatchPolicy AsymmetricAnchorTolerance { get; } = new MatchPolicy
     {
         AnchorTolerance = new TimeTolerance(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5)),
         CandidateTolerance = TimeTolerance.None,

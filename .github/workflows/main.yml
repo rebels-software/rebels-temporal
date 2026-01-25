@@ -10,7 +10,8 @@ jobs:
   build:
     uses: rebels-software/github-actions/.github/workflows/build-dotnet-library.yaml@main
     with:
-      dotnet-version: "8.0.x"
+      dotnet-version: "9.0.x"
+      csproj-path: "src/Rebels.Temporal/Rebels.Temporal.csproj"
     secrets:
       CODE_COV_TOKEN: ${{ secrets.CODE_COV_TOKEN }}
 

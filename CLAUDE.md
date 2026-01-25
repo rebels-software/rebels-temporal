@@ -129,7 +129,7 @@ tests/Rebels.Temporal.Tests/
 └── Reference/           # Reference implementations
 benchmarks/              # BenchmarkDotNet performance tests
 docs/
-├── adr/                 # Architecture Decision Records (13 ADRs)
+├── adr/                 # Architecture Decision Records (16 ADRs)
 └── invariants/          # Non-negotiable system rules (10 invariants)
 ```
 
@@ -163,10 +163,16 @@ All public types must be in `Rebels.Temporal` namespace. No sub-namespaces.
 No NuGet packages beyond .NET BCL (ADR-7). Exception: test projects and benchmarks can use test/benchmark frameworks.
 
 ### INV-6: Allen Relations Exhaustive
-Any two intervals relate by exactly one of the 13 Allen relations. See `MatchTemporal.DetermineAllenRelation()` at src/Rebels.Temporal/Matching/Execution/MatchTemporal.cs:461-493.
+Any two intervals relate by exactly one of the 13 Allen relations. See `MatchTemporal.DetermineAllenRelation()` at src/Rebels.Temporal/Matching/Execution/MatchTemporal.cs:499.
+
+### INV-7: Single Anchor-Candidate Pair
+Each matching operation operates on exactly one anchor type and one candidate type. Multi-source correlation requires multiple separate match invocations.
 
 ### INV-8: MatchPair Relation Consistency
 `MatchPair.Relation` is **required** if and only if `MatchType == Interval`. Point-based matches do NOT include relation data.
+
+### INV-9: TimeTolerance Non-Negative
+Both `Before` and `After` components of `TimeTolerance` must be >= 0. Negative tolerance values are forbidden.
 
 ### INV-10: Input Ordering Validation
 If `InputOrdering.Both` or `InputOrdering.Candidates` is declared, the library validates sorting at runtime and throws if violated.

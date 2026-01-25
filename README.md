@@ -1,8 +1,8 @@
 # Rebels.Temporal
 
-[![Build](https://github.com/rebels-software/csharp-opensource-class-library-template/actions/workflows/dotnet-library-build.yml/badge.svg)](https://github.com/rebels-software/csharp-opensource-class-library-template/actions/workflows/dotnet-library-build.yml)
+[![Build](https://github.com/rebels-software/rebels-temporal/actions/workflows/dotnet-library-build.yml/badge.svg)](https://github.com/rebels-software/rebels-temporal/actions/workflows/dotnet-library-build.yml)
 
-[![codecov](https://codecov.io/gh/rebels-software/csharp-opensource-class-library-template/graph/badge.svg?token=MJBW9OV494)](https://codecov.io/gh/rebels-software/csharp-opensource-class-library-template)
+[![codecov](https://codecov.io/gh/rebels-software/rebels-temporal/graph/badge.svg)](https://codecov.io/gh/rebels-software/rebels-temporal)
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 
@@ -125,7 +125,7 @@ This separation ensures that Rebels.Temporal remains focused, testable, and free
 ## Getting Started
 
 ### Prerequisites
-- [.NET SDK 8.0+](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- [.NET SDK 9.0+](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 
 ### Installation
 
