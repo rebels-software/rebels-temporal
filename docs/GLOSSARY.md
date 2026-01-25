@@ -221,6 +221,14 @@ public readonly struct TimeTolerance
 TimeTolerance.Symmetric(TimeSpan.FromSeconds(5))
 // → Before=5s, After=5s, Window=10s total
 
+// Forward-only: causal matching (response after command)
+TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5))
+// → Before=0, After=5s, only look forward
+
+// Backward-only: causal matching (find command before response)
+TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(5))
+// → Before=5s, After=0, only look backward
+
 // Asymmetric: different tolerances
 new TimeTolerance(
     before: TimeSpan.FromSeconds(30),
@@ -264,6 +272,13 @@ var windowPolicy = new MatchPolicy
 {
     AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(1)),
     InputOrdering = InputOrdering.Candidates  // O(n log m) with binary search
+};
+
+// Causal matching: find responses within 5s after command
+var causalPolicy = new MatchPolicy
+{
+    AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(5)),
+    InputOrdering = InputOrdering.Both
 };
 
 // Interval matching, only overlaps

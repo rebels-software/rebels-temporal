@@ -1,57 +1,58 @@
-# Rebels.Temporal — Komendy LLM
+# Rebels.Temporal — LLM Commands
 
-Ten dokument opisuje system komend dostępnych podczas pracy z asystentami AI (Claude, ChatGPT, Gemini, itp.).
+This document describes the command system available when working with AI assistants (Claude, ChatGPT, Gemini, etc.).
 
 ---
 
-## Dostępne komendy
+## Available Commands
 
-| Komenda | Opis | Kiedy używać |
-|---------|------|--------------|
-| `/init` | Inicjalizuje kontekst LLM | Na początku sesji, przed rozpoczęciem pracy |
-| `/why`  | Wyjaśnia decyzje projektowe | Gdy chcesz zrozumieć "dlaczego" coś zostało zaprojektowane w określony sposób |
+| Command | Description | When to Use |
+|---------|-------------|-------------|
+| `/init` | Initialize LLM context | At the start of a session, before beginning work |
+| `/why`  | Explain design decisions | When you want to understand "why" something was designed a certain way |
+| `/benchmark` | Run performance benchmarks | When you want to measure performance or compare implementations |
 
 ---
 
 ## /init
 
-### Opis
+### Description
 
-Komenda `/init` ładuje pełny kontekst projektu Rebels.Temporal do pamięci LLM. Powinna być użyta na początku każdej nowej sesji pracy z asystentem AI.
+The `/init` command loads the full Rebels.Temporal project context into the LLM's memory. It should be used at the beginning of each new session with an AI assistant.
 
-### Użycie
+### Usage
 
-Wpisz `/init` w konwersacji z LLM.
+Type `/init` in your conversation with the LLM.
 
-### Co robi
+### What It Does
 
-Po wykonaniu komendy, LLM:
+After executing the command, the LLM will:
 
-1. **Załaduje strukturę repozytorium:**
-   - `README.md` — przegląd biblioteki i API
-   - `/docs` — pełna dokumentacja
+1. **Load the repository structure:**
+   - `README.md` — library overview and API
+   - `/docs` — full documentation
    - `/docs/adr` — Architecture Decision Records
-   - `/docs/invariants` — nienaruszalne reguły systemu
-   - `/src/Rebels.Temporal` — kod źródłowy
+   - `/docs/invariants` — non-negotiable system rules
+   - `/src/Rebels.Temporal` — source code
 
-2. **Zrozumie model domeny:**
-   - Temporal Events (zdarzenia punktowe)
+2. **Understand the domain model:**
+   - Temporal Events (point-in-time occurrences)
    - Temporal Periods vs Temporal Intervals
-   - Time Windows (okna czasowe)
+   - Time Windows
    - Temporal Relations (Allen's Interval Algebra)
 
-3. **Pozna zasady projektowe:**
+3. **Learn the design principles:**
    - Performance-first design
-   - Zero alokacji w hot path
-   - Tylko `DateTimeOffset`
-   - Brak zewnętrznych zależności
+   - Zero allocations in hot path
+   - `DateTimeOffset` only
+   - No external dependencies
 
-4. **Potwierdzi gotowość:**
+4. **Confirm readiness:**
    ```
    Rebels.Temporal context loaded and understood. Ready to contribute.
    ```
 
-### Prompt inicjalizacyjny
+### Initialization Prompt
 
 ```text
 You are assisting as a contributor to the open-source library Rebels.Temporal.
@@ -82,77 +83,138 @@ After loading all documents, acknowledge with:
 
 ## /why
 
-### Opis
+### Description
 
-Komenda `/why` służy do wyjaśniania decyzji projektowych w kodzie Rebels.Temporal. Pomaga zrozumieć, dlaczego coś zostało zaimplementowane w określony sposób.
+The `/why` command explains design decisions in the Rebels.Temporal codebase. It helps understand why something was implemented in a particular way.
 
-### Użycie
-
-```
-/why <pytanie lub kontekst>
-```
-
-### Przykłady
+### Usage
 
 ```
-/why dlaczego używamy DateTimeOffset zamiast DateTime?
-/why jaki jest powód user-provided buffers?
-/why dlaczego Allen's Interval Algebra?
-/why wyjaśnij decyzję o single namespace
+/why <question or context>
 ```
 
-### Co robi
+### Examples
 
-Komenda `/why`:
+```
+/why why do we use DateTimeOffset instead of DateTime?
+/why what is the reason for user-provided buffers?
+/why why Allen's Interval Algebra?
+/why explain the single namespace decision
+```
 
-1. Przeszukuje ADRs (Architecture Decision Records)
-2. Sprawdza invarianty systemu
-3. Analizuje kontekst kodu
-4. Zwraca wyjaśnienie z odniesieniami do odpowiednich dokumentów
+### What It Does
 
-### Powiązane dokumenty
+The `/why` command:
 
-- [ADRs](/docs/adr) — wszystkie decyzje architektoniczne
-- [Invariants](/docs/invariants) — nienaruszalne reguły
-- [GLOSSARY.md](/docs/GLOSSARY.md) — definicje terminów
-- [DECISION-TREE.md](/docs/DECISION-TREE.md) — drzewo decyzji
+1. Searches ADRs (Architecture Decision Records)
+2. Checks system invariants
+3. Analyzes code context
+4. Returns an explanation with references to relevant documents
+
+### Related Documents
+
+- [ADRs](/docs/adr) — all architectural decisions
+- [Invariants](/docs/invariants) — non-negotiable rules
+- [GLOSSARY.md](/docs/GLOSSARY.md) — term definitions
+- [DECISION-TREE.md](/docs/DECISION-TREE.md) — decision tree
 
 ---
 
-## Dodawanie nowych komend
+## /benchmark
 
-Aby dodać nową komendę:
+### Description
 
-1. Dodaj wpis do tabeli "Dostępne komendy" powyżej
-2. Utwórz sekcję z opisem komendy zawierającą:
-   - Opis
-   - Użycie
-   - Przykłady
-   - Co robi
-3. Zaktualizuj README.md jeśli komenda jest kluczowa
+The `/benchmark` command runs performance benchmarks for the Rebels.Temporal library. It helps measure and compare the performance of different matching strategies and implementations.
 
-### Format sekcji komendy
+### Usage
+
+```
+/benchmark [filter]
+```
+
+### Examples
+
+```
+/benchmark                    # Interactive mode - choose which benchmark to run
+/benchmark sorted             # Run only sorted matching benchmarks
+/benchmark unsorted           # Run only unsorted matching benchmarks
+/benchmark consumer           # Run buffer implementation comparison
+/benchmark all                # Run all benchmarks
+```
+
+### Available Benchmarks
+
+| Benchmark | Description | Measures |
+|-----------|-------------|----------|
+| `PointMatchingSorted` | Point-to-point matching with sorted data | O(n+m) dual-pointer performance |
+| `PointMatchingUnsorted` | Point-to-point matching with unsorted data | O(n×m) nested loop performance |
+| `Consumer` | Buffer implementation approaches | ref struct vs generic struct with interface |
+
+### What It Does
+
+The `/benchmark` command:
+
+1. Asks which benchmark to run (if no filter provided)
+2. Builds the benchmark project in Release mode
+3. Runs BenchmarkDotNet with the selected benchmarks
+4. Reports results including mean time, allocations, and statistical analysis
+
+### Running Directly
+
+You can also run benchmarks directly from the command line:
+
+```bash
+cd benchmarks
+dotnet run -c Release                              # Interactive mode
+dotnet run -c Release -- --filter *Sorted*         # Filter by name
+dotnet run -c Release -- --filter *PointMatching*  # Run all point matching
+```
+
+### Recent Benchmark Results
+
+| Scenario | InputOrdering | Time | Complexity |
+|----------|---------------|------|------------|
+| 2k × 2k points | `Both` (sorted) | 56 μs | O(n+m) |
+| 2k × 2k points | `None` (unsorted) | 14.4 ms | O(n×m) |
+
+**Sorted data is ~255x faster.**
+
+---
+
+## Adding New Commands
+
+To add a new command:
+
+1. Add an entry to the "Available Commands" table above
+2. Create a section with the command description containing:
+   - Description
+   - Usage
+   - Examples
+   - What It Does
+3. Update README.md if the command is critical
+
+### Command Section Format
 
 ```markdown
-## /nazwa-komendy
+## /command-name
 
-### Opis
-[Krótki opis co robi komenda]
+### Description
+[Brief description of what the command does]
 
-### Użycie
-[Jak wywołać komendę]
+### Usage
+[How to invoke the command]
 
-### Przykłady
-[Konkretne przykłady użycia]
+### Examples
+[Concrete usage examples]
 
-### Co robi
-[Szczegółowy opis działania]
+### What It Does
+[Detailed description of behavior]
 ```
 
 ---
 
-## Zobacz także
+## See Also
 
-- [README.md](/README.md) — główna dokumentacja
-- [GLOSSARY.md](GLOSSARY.md) — słownik terminów
-- [DECISION-TREE.md](DECISION-TREE.md) — przewodnik wyboru API
+- [README.md](/README.md) — main documentation
+- [GLOSSARY.md](GLOSSARY.md) — glossary of terms
+- [DECISION-TREE.md](DECISION-TREE.md) — API selection guide

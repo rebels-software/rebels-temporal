@@ -80,6 +80,40 @@ public readonly struct TimeTolerance
     }
 
     /// <summary>
+    /// Creates a forward-only tolerance (zero before, specified after).
+    /// </summary>
+    /// <param name="duration">The tolerance to apply after the reference timestamp.</param>
+    /// <returns>A new <see cref="TimeTolerance"/> instance.</returns>
+    /// <remarks>
+    /// Use this for causal matching where candidates can only occur after the anchor.
+    /// For example, matching a command with its response that must arrive later.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="duration"/> is negative.
+    /// </exception>
+    public static TimeTolerance ForwardOnly(TimeSpan duration)
+    {
+        return new TimeTolerance(TimeSpan.Zero, duration);
+    }
+
+    /// <summary>
+    /// Creates a backward-only tolerance (specified before, zero after).
+    /// </summary>
+    /// <param name="duration">The tolerance to apply before the reference timestamp.</param>
+    /// <returns>A new <see cref="TimeTolerance"/> instance.</returns>
+    /// <remarks>
+    /// Use this for causal matching where candidates can only occur before the anchor.
+    /// For example, finding a command that preceded a response.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="duration"/> is negative.
+    /// </exception>
+    public static TimeTolerance BackwardOnly(TimeSpan duration)
+    {
+        return new TimeTolerance(duration, TimeSpan.Zero);
+    }
+
+    /// <summary>
     /// Gets a zero tolerance (exact matching required).
     /// </summary>
     public static TimeTolerance None => new(TimeSpan.Zero, TimeSpan.Zero);
