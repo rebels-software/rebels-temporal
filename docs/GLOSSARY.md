@@ -128,11 +128,12 @@ var tolerance = new TimeTolerance(
 
 ```csharp
 // anchors = what we're trying to find matches FOR
-int count = MatchTemporal.Points.With.Points(
+var visitor = new BufferVisitor<Event, Event>(buffer);
+MatchTemporal.Points.With.Points(
     anchors,      // ← Anchor collection (primary)
     candidates,   // ← Candidate collection (secondary)
     policy,
-    ref buffer);
+    ref visitor);
 ```
 
 **Mental model:** "For each anchor, find matching candidates."
@@ -147,11 +148,12 @@ int count = MatchTemporal.Points.With.Points(
 
 ```csharp
 // candidates = what we're searching through to find matches
-int count = MatchTemporal.Points.With.Points(
+var visitor = new BufferVisitor<Event, Event>(buffer);
+MatchTemporal.Points.With.Points(
     anchors,      // ← Looking for matches FOR these
     candidates,   // ← Looking for matches IN these
     policy,
-    ref buffer);
+    ref visitor);
 ```
 
 ---
@@ -400,19 +402,40 @@ AllowedRelations.Any
 
 ---
 
-## Buffer Concepts
+## Visitor Concepts
 
-### Match Buffer
+### Match Visitor
 
-**Definition:** User-provided storage for match results. Avoids heap allocation.
+**Definition:** Interface for receiving match results. Enables zero-allocation and observability.
 
-**Code:** `MatchBuffer<TAnchor, TCandidate>` (ref struct)
+**Code:** `IMatchVisitor<TAnchor, TCandidate>`
 
 ```csharp
-public ref struct MatchBuffer<TAnchor, TCandidate>
+public interface IMatchVisitor<TAnchor, TCandidate>
 {
-    public Span<MatchPair<TAnchor, TCandidate>> Pairs;
-    public int Count;
+    void OnMatch(
+        in TAnchor anchor,
+        in TCandidate candidate,
+        int anchorIndex,
+        int candidateIndex,
+        MatchType type,
+        TemporalRelation? relation);
+
+    void OnUnmatchedAnchor(in TAnchor anchor, int anchorIndex);
+}
+```
+
+### Buffer Visitor
+
+**Definition:** Reference implementation of `IMatchVisitor` that writes matches to a user-provided buffer.
+
+**Code:** `BufferVisitor<TAnchor, TCandidate>` (ref struct)
+
+```csharp
+public ref struct BufferVisitor<TAnchor, TCandidate> : IMatchVisitor<TAnchor, TCandidate>
+{
+    public int MatchCount;
+    public int UnmatchedCount;
 }
 ```
 
@@ -420,14 +443,15 @@ public ref struct MatchBuffer<TAnchor, TCandidate>
 ```csharp
 // Stack allocation (small result sets)
 Span<MatchPair<Event, Event>> span = stackalloc MatchPair<Event, Event>[100];
-var buffer = new MatchBuffer<Event, Event> { Pairs = span };
+var visitor = new BufferVisitor<Event, Event>(span);
 
 // Heap allocation (large result sets)
 var array = new MatchPair<Event, Event>[10000];
-var buffer = new MatchBuffer<Event, Event> { Pairs = array };
+var visitor = new BufferVisitor<Event, Event>(array);
 
-// Reusable buffer
-buffer.Count = 0;  // Reset for next use
+// After matching
+MatchTemporal.Points.With.Points(anchors, candidates, policy, ref visitor);
+Console.WriteLine($"Matches: {visitor.MatchCount}, Unmatched: {visitor.UnmatchedCount}");
 ```
 
 ---
@@ -449,4 +473,5 @@ buffer.Count = 0;  // Reset for next use
 | Input Ordering | `InputOrdering` | Sorting declaration |
 | Temporal Relation | `TemporalRelation` | Allen's 13 interval relations |
 | Allowed Relations | `AllowedRelations` | Filter for interval matching |
-| Match Buffer | `MatchBuffer<T,U>` | User-provided result storage |
+| Match Visitor | `IMatchVisitor<T,U>` | Interface for receiving match results |
+| Buffer Visitor | `BufferVisitor<T,U>` | Reference implementation storing to buffer |

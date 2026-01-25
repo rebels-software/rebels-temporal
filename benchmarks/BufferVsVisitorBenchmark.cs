@@ -4,10 +4,15 @@ using Rebels.Temporal;
 namespace Rebels.Temporal.Benchmarks;
 
 /// <summary>
-/// Benchmark comparing buffer-based API vs visitor-based API performance.
+/// Benchmark for visitor-based matching at various scales.
 /// </summary>
+/// <remarks>
+/// Historical comparison between buffer-based and visitor-based APIs
+/// showed 1-4% performance difference (within measurement noise).
+/// See ADR-10 for detailed benchmark results.
+/// </remarks>
 [MemoryDiagnoser]
-public class BufferVsVisitorBenchmark
+public class VisitorScaleBenchmark
 {
     [Params(100, 1_000, 10_000)]
     public int Count { get; set; }
@@ -48,21 +53,14 @@ public class BufferVsVisitorBenchmark
     // Sorted Input - O(n+m) dual-pointer scan
     // ===========================================
 
-    [Benchmark(Baseline = true)]
-    [BenchmarkCategory("Sorted")]
-    public int Buffer_Sorted()
-    {
-        var buffer = new MatchBuffer<TestPoint, TestPoint> { Pairs = _buffer };
-        return MatchTemporal.Points.With.Points(_anchors, _candidates, _sortedPolicy, ref buffer);
-    }
-
     [Benchmark]
     [BenchmarkCategory("Sorted")]
-    public int Visitor_Sorted()
+    public int Sorted()
     {
         var visitor = new BufferVisitor<TestPoint, TestPoint>(_buffer);
-        return MatchTemporal.Points.With.Points<TestPoint, TestPoint, BufferVisitor<TestPoint, TestPoint>>(
+        MatchTemporal.Points.With.Points<TestPoint, TestPoint, BufferVisitor<TestPoint, TestPoint>>(
             _anchors, _candidates, _sortedPolicy, ref visitor);
+        return visitor.MatchCount;
     }
 
     // ===========================================
@@ -71,18 +69,11 @@ public class BufferVsVisitorBenchmark
 
     [Benchmark]
     [BenchmarkCategory("Unsorted")]
-    public int Buffer_Unsorted()
-    {
-        var buffer = new MatchBuffer<TestPoint, TestPoint> { Pairs = _buffer };
-        return MatchTemporal.Points.With.Points(_anchors, _candidates, _unsortedPolicy, ref buffer);
-    }
-
-    [Benchmark]
-    [BenchmarkCategory("Unsorted")]
-    public int Visitor_Unsorted()
+    public int Unsorted()
     {
         var visitor = new BufferVisitor<TestPoint, TestPoint>(_buffer);
-        return MatchTemporal.Points.With.Points<TestPoint, TestPoint, BufferVisitor<TestPoint, TestPoint>>(
+        MatchTemporal.Points.With.Points<TestPoint, TestPoint, BufferVisitor<TestPoint, TestPoint>>(
             _anchors, _candidates, _unsortedPolicy, ref visitor);
+        return visitor.MatchCount;
     }
 }

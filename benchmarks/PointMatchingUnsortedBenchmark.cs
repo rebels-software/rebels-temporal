@@ -43,7 +43,9 @@ public class PointMatchingUnsortedBenchmark
     [Benchmark]
     public int MatchUnsorted()
     {
-        var buffer = new MatchBuffer<TestPoint, TestPoint> { Pairs = _buffer };
-        return MatchTemporal.Points.With.Points(_anchors, _candidates, _policy, ref buffer);
+        var visitor = new BufferVisitor<TestPoint, TestPoint>(_buffer);
+        MatchTemporal.Points.With.Points<TestPoint, TestPoint, BufferVisitor<TestPoint, TestPoint>>(
+            _anchors, _candidates, _policy, ref visitor);
+        return visitor.MatchCount;
     }
 }

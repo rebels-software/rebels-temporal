@@ -37,8 +37,8 @@ public class ValidationTests
         var ex = Assert.Throws<ArgumentException>(() =>
         {
             var buffer = new MatchPair<TestEvent, TestInterval>[10];
-            var matchBuffer = new MatchBuffer<TestEvent, TestInterval> { Pairs = buffer };
-            MatchTemporal.Points.With.Intervals(anchors, candidates, policy, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestInterval>(buffer);
+            MatchTemporal.Points.With.Intervals<TestEvent, TestInterval, BufferVisitor<TestEvent, TestInterval>>(anchors, candidates, policy, ref visitor);
         });
 
         Assert.That(ex!.Message, Does.Contain("Start"));
@@ -56,8 +56,8 @@ public class ValidationTests
         var ex = Assert.Throws<ArgumentException>(() =>
         {
             var buffer = new MatchPair<TestInterval, TestEvent>[10];
-            var matchBuffer = new MatchBuffer<TestInterval, TestEvent> { Pairs = buffer };
-            MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref matchBuffer);
+            var visitor = new BufferVisitor<TestInterval, TestEvent>(buffer);
+            MatchTemporal.Intervals.With.Points<TestInterval, TestEvent, BufferVisitor<TestInterval, TestEvent>>(anchors, candidates, policy, ref visitor);
         });
 
         Assert.That(ex!.Message, Does.Contain("Start"));
@@ -74,8 +74,8 @@ public class ValidationTests
         var ex = Assert.Throws<ArgumentException>(() =>
         {
             var buffer = new MatchPair<TestInterval, TestInterval>[10];
-            var matchBuffer = new MatchBuffer<TestInterval, TestInterval> { Pairs = buffer };
-            MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref matchBuffer);
+            var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+            MatchTemporal.Intervals.With.Intervals<TestInterval, TestInterval, BufferVisitor<TestInterval, TestInterval>>(anchors, candidates, policy, ref visitor);
         });
 
         Assert.That(ex!.Message, Does.Contain("Start"));
@@ -91,8 +91,8 @@ public class ValidationTests
         var ex = Assert.Throws<ArgumentException>(() =>
         {
             var buffer = new MatchPair<TestInterval, TestInterval>[10];
-            var matchBuffer = new MatchBuffer<TestInterval, TestInterval> { Pairs = buffer };
-            MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref matchBuffer);
+            var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+            MatchTemporal.Intervals.With.Intervals<TestInterval, TestInterval, BufferVisitor<TestInterval, TestInterval>>(anchors, candidates, policy, ref visitor);
         });
 
         Assert.That(ex!.Message, Does.Contain("Start"));
@@ -105,59 +105,59 @@ public class ValidationTests
     [Test]
     public void PointToPoint_Should_Throw_When_Buffer_Is_Too_Small()
     {
-        // 3 anchors × 3 candidates = 9 potential matches, but buffer is only 5
+        // 3 anchors x 3 candidates = 9 potential matches, but buffer is only 5
         var anchors = TestDataGenerator.CreatePoints(0, 0, 0);
         var candidates = TestDataGenerator.CreatePoints(0, 0, 0);
 
         Assert.Throws<InvalidOperationException>(() =>
         {
             var buffer = new MatchPair<TestEvent, TestEvent>[5]; // Too small!
-            var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
-            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
+            MatchTemporal.Points.With.Points<TestEvent, TestEvent, BufferVisitor<TestEvent, TestEvent>>(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
         });
     }
 
     [Test]
     public void PointToInterval_Should_Throw_When_Buffer_Is_Too_Small()
     {
-        var anchors = TestDataGenerator.CreatePoints(5, 5, 5);
-        var candidates = TestDataGenerator.CreateIntervals((0, 10), (0, 10), (0, 10));
-
         Assert.Throws<InvalidOperationException>(() =>
         {
+            ReadOnlySpan<TestEvent> anchors = TestDataGenerator.CreatePoints(5, 5, 5);
+            ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals((0, 10), (0, 10), (0, 10));
+
             var buffer = new MatchPair<TestEvent, TestInterval>[5]; // Too small for 9 matches
-            var matchBuffer = new MatchBuffer<TestEvent, TestInterval> { Pairs = buffer };
-            MatchTemporal.Points.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestInterval>(buffer);
+            MatchTemporal.Points.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
         });
     }
 
     [Test]
     public void IntervalToInterval_Should_Throw_When_Buffer_Is_Too_Small()
     {
-        var anchors = TestDataGenerator.CreateIntervals((0, 20), (0, 20), (0, 20));
-        var candidates = TestDataGenerator.CreateIntervals((5, 15), (5, 15), (5, 15));
-
         Assert.Throws<InvalidOperationException>(() =>
         {
+            ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((0, 20), (0, 20), (0, 20));
+            ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals((5, 15), (5, 15), (5, 15));
+
             var buffer = new MatchPair<TestInterval, TestInterval>[5]; // Too small for 9 matches
-            var matchBuffer = new MatchBuffer<TestInterval, TestInterval> { Pairs = buffer };
-            MatchTemporal.Intervals.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+            var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+            MatchTemporal.Intervals.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
         });
     }
 
     [Test]
     public void Buffer_Exactly_Right_Size_Should_Not_Throw()
     {
-        // 2 anchors × 2 candidates = 4 matches, buffer is exactly 4
+        // 2 anchors x 2 candidates = 4 matches, buffer is exactly 4
         var anchors = TestDataGenerator.CreatePoints(0, 0);
         var candidates = TestDataGenerator.CreatePoints(0, 0);
 
         var buffer = new MatchPair<TestEvent, TestEvent>[4];
-        var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
 
-        MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+        MatchTemporal.Points.With.Points<TestEvent, TestEvent, BufferVisitor<TestEvent, TestEvent>>(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
 
-        Assert.That(matchBuffer.Count, Is.EqualTo(4));
+        Assert.That(visitor.MatchCount, Is.EqualTo(4));
     }
 
     #endregion
@@ -171,11 +171,11 @@ public class ValidationTests
         var candidates = TestDataGenerator.CreatePoints(10);
 
         var buffer = new MatchPair<TestEvent, TestEvent>[10];
-        var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
 
-        MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+        MatchTemporal.Points.With.Points<TestEvent, TestEvent, BufferVisitor<TestEvent, TestEvent>>(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
 
-        Assert.That(matchBuffer.Count, Is.EqualTo(1));
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
         Assert.That(buffer[0].MatchType, Is.EqualTo(MatchType.PointExact));
         Assert.That(buffer[0].Relation, Is.Null);
     }
@@ -183,15 +183,15 @@ public class ValidationTests
     [Test]
     public void MatchPair_PointInInterval_Should_Not_Have_Relation()
     {
-        var anchors = TestDataGenerator.CreatePoints(15);
-        var candidates = TestDataGenerator.CreateIntervals((10, 20));
+        ReadOnlySpan<TestEvent> anchors = TestDataGenerator.CreatePoints(15);
+        ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals((10, 20));
 
         var buffer = new MatchPair<TestEvent, TestInterval>[10];
-        var matchBuffer = new MatchBuffer<TestEvent, TestInterval> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestEvent, TestInterval>(buffer);
 
-        MatchTemporal.Points.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+        MatchTemporal.Points.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
 
-        Assert.That(matchBuffer.Count, Is.EqualTo(1));
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
         Assert.That(buffer[0].MatchType, Is.EqualTo(MatchType.PointInInterval));
         Assert.That(buffer[0].Relation, Is.Null);
     }
@@ -199,15 +199,15 @@ public class ValidationTests
     [Test]
     public void MatchPair_Interval_Should_Always_Have_Relation()
     {
-        var anchors = TestDataGenerator.CreateIntervals((0, 20));
-        var candidates = TestDataGenerator.CreateIntervals((5, 15));
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((0, 20));
+        ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals((5, 15));
 
         var buffer = new MatchPair<TestInterval, TestInterval>[10];
-        var matchBuffer = new MatchBuffer<TestInterval, TestInterval> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
 
-        MatchTemporal.Intervals.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref matchBuffer);
+        MatchTemporal.Intervals.With.Intervals(anchors, candidates, TestPolicies.ExactMatch, ref visitor);
 
-        Assert.That(matchBuffer.Count, Is.EqualTo(1));
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
         Assert.That(buffer[0].MatchType, Is.EqualTo(MatchType.Interval));
         Assert.That(buffer[0].Relation, Is.Not.Null);
         Assert.That(buffer[0].Relation, Is.EqualTo(TemporalRelation.Contains));

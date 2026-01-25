@@ -47,8 +47,9 @@ int count = MatchTemporal.Points.With.Points(
 ### Option 3: Visitor Pattern with Struct Constraint
 
 ```csharp
-int count = MatchTemporal.Points.With.Points<TAnchor, TCandidate, TVisitor>(
+MatchTemporal.Points.With.Points<TAnchor, TCandidate, TVisitor>(
     anchors, candidates, policy, ref visitor);
+// Match count available via visitor.MatchCount
 ```
 
 | Aspect | Assessment |
@@ -80,7 +81,7 @@ public interface IMatchVisitor<TAnchor, TCandidate>
 ### Method Signature
 
 ```csharp
-public int Points<TAnchor, TCandidate, TVisitor>(
+public void Points<TAnchor, TCandidate, TVisitor>(
     ReadOnlySpan<TAnchor> anchors,
     ReadOnlySpan<TCandidate> candidates,
     MatchPolicy policy,
@@ -89,6 +90,8 @@ public int Points<TAnchor, TCandidate, TVisitor>(
     where TCandidate : ITemporalPoint
     where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
 ```
+
+Methods return `void` — match count and statistics are accessed through the visitor (e.g., `visitor.MatchCount`, `visitor.UnmatchedCount`).
 
 The `allows ref struct` constraint (C# 13 / .NET 9) enables:
 - Regular structs with heap-allocated backing arrays

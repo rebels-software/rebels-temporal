@@ -53,16 +53,16 @@ START: What are you matching?
 
 ```csharp
 // CASE 1: Both are points (e.g., sensor reading ↔ command timestamp)
-MatchTemporal.Points.With.Points(readings, commands, policy, ref buffer);
+MatchTemporal.Points.With.Points(readings, commands, policy, ref visitor);
 
 // CASE 2: Point anchor, interval candidate (e.g., event ↔ session it belongs to)
-MatchTemporal.Points.With.Intervals(events, sessions, policy, ref buffer);
+MatchTemporal.Points.With.Intervals(events, sessions, policy, ref visitor);
 
 // CASE 3: Interval anchor, point candidate (e.g., session ↔ events within it)
-MatchTemporal.Intervals.With.Points(sessions, events, policy, ref buffer);
+MatchTemporal.Intervals.With.Points(sessions, events, policy, ref visitor);
 
 // CASE 4: Both intervals (e.g., charging session ↔ usage session)
-MatchTemporal.Intervals.With.Intervals(chargingSessions, usageSessions, policy, ref buffer);
+MatchTemporal.Intervals.With.Intervals(chargingSessions, usageSessions, policy, ref visitor);
 ```
 
 ---
@@ -309,9 +309,11 @@ Q: How many matches do you expect?
 // Stack allocation (< 1KB recommended)
 // MatchPair is ~24-48 bytes depending on types
 Span<MatchPair<Event, Event>> span = stackalloc MatchPair<Event, Event>[20];
+var visitor = new BufferVisitor<Event, Event>(span);
 
 // Heap allocation (larger buffers)
 var array = new MatchPair<Event, Event>[10000];
+var visitor = new BufferVisitor<Event, Event>(array);
 
 // Reusable pre-allocated buffer
 private readonly MatchPair<Event, Event>[] _buffer = new MatchPair<Event, Event>[1000];
@@ -344,13 +346,16 @@ var policy = new MatchPolicy
 };
 
 var buffer = new MatchPair<SensorReading, Command>[1500];
-var matchBuffer = new MatchBuffer<SensorReading, Command> { Pairs = buffer };
+var visitor = new BufferVisitor<SensorReading, Command>(buffer);
 
-int count = MatchTemporal.Points.With.Points(
+MatchTemporal.Points.With.Points(
     readings,   // 1000 sorted sensor readings
     commands,   // 500 sorted commands
     policy,
-    ref matchBuffer);
+    ref visitor);
+
+// visitor.MatchCount contains the number of matches
+// visitor.UnmatchedCount contains unmatched anchors
 ```
 
 ---
@@ -386,16 +391,16 @@ var policy = new MatchPolicy
 };
 
 var buffer = new MatchPair<ChargingSession, UsageSession>[10000];
-var matchBuffer = new MatchBuffer<ChargingSession, UsageSession> { Pairs = buffer };
+var visitor = new BufferVisitor<ChargingSession, UsageSession>(buffer);
 
-int count = MatchTemporal.Intervals.With.Intervals(
+MatchTemporal.Intervals.With.Intervals(
     chargingSessions,
     usageSessions,
     policy,
-    ref matchBuffer);
+    ref visitor);
 
 // Process overlapping pairs
-for (int i = 0; i < count; i++)
+for (int i = 0; i < visitor.MatchCount; i++)
 {
     var pair = buffer[i];
     Console.WriteLine($"{pair.Anchor.DeviceId} overlaps with {pair.Candidate.SessionId}: {pair.Relation}");

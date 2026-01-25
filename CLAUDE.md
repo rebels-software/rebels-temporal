@@ -86,21 +86,22 @@ MatchTemporal.Intervals.With.Intervals(...) // Interval → Interval (with Allen
 
 See `src/Rebels.Temporal/Matching/Execution/MatchTemporal.cs:21-170` for the fluent API structure.
 
-### User-Provided Buffers (ADR-10)
+### Visitor Pattern API (ADR-10)
 
-Unlike typical .NET APIs, matching methods **do not allocate or return collections**. Callers provide buffers via `MatchBuffer<TAnchor, TCandidate>`:
+Unlike typical .NET APIs, matching methods **do not allocate or return collections**. Callers provide a visitor implementing `IMatchVisitor<TAnchor, TCandidate>`:
 
 ```csharp
 var buffer = new MatchPair<SensorReading, CommandEvent>[100];
-var matchBuffer = new MatchBuffer<SensorReading, CommandEvent> { Pairs = buffer };
+var visitor = new BufferVisitor<SensorReading, CommandEvent>(buffer);
 
-int matchCount = MatchTemporal.Points.With.Points(
-    anchors, candidates, policy, ref matchBuffer);
+MatchTemporal.Points.With.Points(
+    anchors, candidates, policy, ref visitor);
 
-// Process results 0..matchCount-1 in the buffer
+// Process results 0..visitor.MatchCount-1 in the buffer
+// Also available: visitor.UnmatchedCount for observability
 ```
 
-This enables zero-allocation hot paths (INV-3) and gives callers full memory control.
+This enables zero-allocation hot paths (INV-3), gives callers full memory control, and provides built-in observability through `OnMatch` and `OnUnmatchedAnchor` callbacks.
 
 ### Algorithm Selection via InputOrdering
 
@@ -120,7 +121,7 @@ Performance depends critically on `InputOrdering` in `MatchPolicy`:
 src/Rebels.Temporal/
 ├── Matching/
 │   ├── Concepts/        # Core interfaces: ITemporalPoint, ITemporalInterval
-│   ├── Execution/       # MatchTemporal (fluent API), MatchBuffer, MatchPair
+│   ├── Execution/       # MatchTemporal (fluent API), IMatchVisitor, BufferVisitor, MatchPair
 │   └── Policies/        # MatchPolicy, TimeTolerance, InputOrdering, AllowedRelations
 tests/Rebels.Temporal.Tests/
 ├── Matching/            # Core matching tests
@@ -183,9 +184,9 @@ Example:
 ```csharp
 // Good: Test with real data and assert results
 var matches = new MatchPair<SensorReading, SensorReading>[100];
-var buffer = new MatchBuffer<SensorReading, SensorReading> { Pairs = matches };
-int count = MatchTemporal.Points.With.Points(anchors, candidates, policy, ref buffer);
-Assert.Equal(expectedCount, count);
+var visitor = new BufferVisitor<SensorReading, SensorReading>(matches);
+MatchTemporal.Points.With.Points(anchors, candidates, policy, ref visitor);
+Assert.Equal(expectedCount, visitor.MatchCount);
 Assert.Equal(expectedValue, matches[0].Anchor.Value);
 
 // Bad: Mock MatchTemporal or verify method calls
@@ -250,4 +251,4 @@ This repository includes custom commands for AI assistants. See `docs/COMMANDS.m
 - Performance is not premature optimization here - it's fundamental to the library's purpose (IoT/telemetry at scale)
 - When suggesting changes, verify they respect all invariants
 - The flat namespace is intentional - do not create sub-namespaces
-- Buffer-based APIs may seem low-level, but they're required for zero-allocation guarantee
+- Visitor-based APIs may seem low-level, but they're required for zero-allocation guarantee and observability

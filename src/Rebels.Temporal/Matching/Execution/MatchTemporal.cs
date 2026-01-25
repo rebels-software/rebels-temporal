@@ -47,18 +47,24 @@ public static class MatchTemporal
     public readonly struct PointAnchorsWith
     {
         /// <summary>
-        /// Matches point anchors with point candidates using buffer-based output.
+        /// Matches point anchors with point candidates.
         /// </summary>
-        public int Points<TAnchor, TCandidate>(
+        /// <typeparam name="TAnchor">Type of anchor events.</typeparam>
+        /// <typeparam name="TCandidate">Type of candidate events.</typeparam>
+        /// <typeparam name="TVisitor">Type of visitor.</typeparam>
+        /// <param name="anchors">Collection of anchor events.</param>
+        /// <param name="candidates">Collection of candidate events.</param>
+        /// <param name="policy">Matching policy.</param>
+        /// <param name="visitor">Visitor to receive match notifications.</param>
+        public void Points<TAnchor, TCandidate, TVisitor>(
             ReadOnlySpan<TAnchor> anchors,
             ReadOnlySpan<TCandidate> candidates,
             MatchPolicy policy,
-            ref MatchBuffer<TAnchor, TCandidate> buffer)
+            ref TVisitor visitor)
             where TAnchor : ITemporalPoint
             where TCandidate : ITemporalPoint
+            where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
         {
-            buffer.Count = 0;
-
             // Validate ordering if specified
             if (policy.InputOrdering == InputOrdering.Both)
             {
@@ -74,86 +80,21 @@ public static class MatchTemporal
             switch (policy.InputOrdering)
             {
                 case InputOrdering.Both:
-                    MatchPointToPointSorted(anchors, candidates, policy, ref buffer);
+                    MatchPointToPointSorted(anchors, candidates, policy, ref visitor);
                     break;
-
                 case InputOrdering.Candidates:
-                    MatchPointToPointCandidatesSorted(anchors, candidates, policy, ref buffer);
+                    MatchPointToPointCandidatesSorted(anchors, candidates, policy, ref visitor);
                     break;
-
-                case InputOrdering.None:
                 default:
-                    MatchPointToPointUnsorted(anchors, candidates, policy, ref buffer);
+                    MatchPointToPointUnsorted(anchors, candidates, policy, ref visitor);
                     break;
             }
-
-            return buffer.Count;
         }
 
         /// <summary>
-        /// Matches point anchors with point candidates using visitor-based output.
+        /// Matches point anchors with interval candidates.
         /// </summary>
-        /// <typeparam name="TAnchor">Type of anchor events.</typeparam>
-        /// <typeparam name="TCandidate">Type of candidate events.</typeparam>
-        /// <typeparam name="TVisitor">Type of visitor (must be a struct for JIT devirtualization).</typeparam>
-        /// <param name="anchors">Collection of anchor events.</param>
-        /// <param name="candidates">Collection of candidate events.</param>
-        /// <param name="policy">Matching policy.</param>
-        /// <param name="visitor">Visitor to receive match notifications.</param>
-        /// <returns>Number of matches found.</returns>
-        public int Points<TAnchor, TCandidate, TVisitor>(
-            ReadOnlySpan<TAnchor> anchors,
-            ReadOnlySpan<TCandidate> candidates,
-            MatchPolicy policy,
-            ref TVisitor visitor)
-            where TAnchor : ITemporalPoint
-            where TCandidate : ITemporalPoint
-            where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
-        {
-            // Validate ordering if specified
-            if (policy.InputOrdering == InputOrdering.Both)
-            {
-                ValidatePointOrdering(anchors, nameof(anchors));
-                ValidatePointOrdering(candidates, nameof(candidates));
-            }
-            else if (policy.InputOrdering == InputOrdering.Candidates)
-            {
-                ValidatePointOrdering(candidates, nameof(candidates));
-            }
-
-            // Select algorithm based on ordering
-            return policy.InputOrdering switch
-            {
-                InputOrdering.Both => MatchPointToPointSortedVisitor(anchors, candidates, policy, ref visitor),
-                InputOrdering.Candidates => MatchPointToPointCandidatesSortedVisitor(anchors, candidates, policy, ref visitor),
-                _ => MatchPointToPointUnsortedVisitor(anchors, candidates, policy, ref visitor)
-            };
-        }
-
-        /// <summary>
-        /// Matches point anchors with interval candidates using buffer-based output.
-        /// </summary>
-        public int Intervals<TAnchor, TCandidate>(
-            ReadOnlySpan<TAnchor> anchors,
-            ReadOnlySpan<TCandidate> candidates,
-            MatchPolicy policy,
-            ref MatchBuffer<TAnchor, TCandidate> buffer)
-            where TAnchor : ITemporalPoint
-            where TCandidate : ITemporalInterval
-        {
-            buffer.Count = 0;
-
-            // Validate interval correctness
-            ValidateIntervals(candidates, nameof(candidates));
-
-            MatchPointToInterval(anchors, candidates, policy, ref buffer);
-            return buffer.Count;
-        }
-
-        /// <summary>
-        /// Matches point anchors with interval candidates using visitor-based output.
-        /// </summary>
-        public int Intervals<TAnchor, TCandidate, TVisitor>(
+        public void Intervals<TAnchor, TCandidate, TVisitor>(
             ReadOnlySpan<TAnchor> anchors,
             ReadOnlySpan<TCandidate> candidates,
             MatchPolicy policy,
@@ -165,7 +106,7 @@ public static class MatchTemporal
             // Validate interval correctness
             ValidateIntervals(candidates, nameof(candidates));
 
-            return MatchPointToIntervalVisitor(anchors, candidates, policy, ref visitor);
+            MatchPointToInterval(anchors, candidates, policy, ref visitor);
         }
     }
 
@@ -186,29 +127,9 @@ public static class MatchTemporal
     public readonly struct IntervalAnchorsWith
     {
         /// <summary>
-        /// Matches interval anchors with point candidates using buffer-based output.
+        /// Matches interval anchors with point candidates.
         /// </summary>
-        public int Points<TAnchor, TCandidate>(
-            ReadOnlySpan<TAnchor> anchors,
-            ReadOnlySpan<TCandidate> candidates,
-            MatchPolicy policy,
-            ref MatchBuffer<TAnchor, TCandidate> buffer)
-            where TAnchor : ITemporalInterval
-            where TCandidate : ITemporalPoint
-        {
-            buffer.Count = 0;
-
-            // Validate interval correctness
-            ValidateIntervals(anchors, nameof(anchors));
-
-            MatchIntervalToPoint(anchors, candidates, policy, ref buffer);
-            return buffer.Count;
-        }
-
-        /// <summary>
-        /// Matches interval anchors with point candidates using visitor-based output.
-        /// </summary>
-        public int Points<TAnchor, TCandidate, TVisitor>(
+        public void Points<TAnchor, TCandidate, TVisitor>(
             ReadOnlySpan<TAnchor> anchors,
             ReadOnlySpan<TCandidate> candidates,
             MatchPolicy policy,
@@ -220,34 +141,13 @@ public static class MatchTemporal
             // Validate interval correctness
             ValidateIntervals(anchors, nameof(anchors));
 
-            return MatchIntervalToPointVisitor(anchors, candidates, policy, ref visitor);
+            MatchIntervalToPoint(anchors, candidates, policy, ref visitor);
         }
 
         /// <summary>
-        /// Matches interval anchors with interval candidates using buffer-based output.
+        /// Matches interval anchors with interval candidates.
         /// </summary>
-        public int Intervals<TAnchor, TCandidate>(
-            ReadOnlySpan<TAnchor> anchors,
-            ReadOnlySpan<TCandidate> candidates,
-            MatchPolicy policy,
-            ref MatchBuffer<TAnchor, TCandidate> buffer)
-            where TAnchor : ITemporalInterval
-            where TCandidate : ITemporalInterval
-        {
-            buffer.Count = 0;
-
-            // Validate interval correctness
-            ValidateIntervals(anchors, nameof(anchors));
-            ValidateIntervals(candidates, nameof(candidates));
-
-            MatchIntervalToInterval(anchors, candidates, policy, ref buffer);
-            return buffer.Count;
-        }
-
-        /// <summary>
-        /// Matches interval anchors with interval candidates using visitor-based output.
-        /// </summary>
-        public int Intervals<TAnchor, TCandidate, TVisitor>(
+        public void Intervals<TAnchor, TCandidate, TVisitor>(
             ReadOnlySpan<TAnchor> anchors,
             ReadOnlySpan<TCandidate> candidates,
             MatchPolicy policy,
@@ -260,110 +160,13 @@ public static class MatchTemporal
             ValidateIntervals(anchors, nameof(anchors));
             ValidateIntervals(candidates, nameof(candidates));
 
-            return MatchIntervalToIntervalVisitor(anchors, candidates, policy, ref visitor);
+            MatchIntervalToInterval(anchors, candidates, policy, ref visitor);
         }
     }
 
     #region Point-to-Point Matching
 
-    private static void MatchPointToPointUnsorted<TAnchor, TCandidate>(
-        ReadOnlySpan<TAnchor> anchors,
-        ReadOnlySpan<TCandidate> candidates,
-        MatchPolicy policy,
-        ref MatchBuffer<TAnchor, TCandidate> buffer)
-        where TAnchor : ITemporalPoint
-        where TCandidate : ITemporalPoint
-    {
-        var anchorTolerance = policy.AnchorTolerance;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            var anchor = anchors[i];
-            var anchorTime = anchor.At;
-            var windowStart = anchorTime - anchorTolerance.Before;
-            var windowEnd = anchorTime + anchorTolerance.After;
-
-            for (int j = 0; j < candidates.Length; j++)
-            {
-                var candidate = candidates[j];
-                var candidateTime = candidate.At;
-
-                if (candidateTime >= windowStart && candidateTime <= windowEnd)
-                {
-                    buffer.Add(anchor, candidate, MatchType.PointExact);
-                }
-            }
-        }
-    }
-
-    private static void MatchPointToPointSorted<TAnchor, TCandidate>(
-        ReadOnlySpan<TAnchor> anchors,
-        ReadOnlySpan<TCandidate> candidates,
-        MatchPolicy policy,
-        ref MatchBuffer<TAnchor, TCandidate> buffer)
-        where TAnchor : ITemporalPoint
-        where TCandidate : ITemporalPoint
-    {
-        var anchorTolerance = policy.AnchorTolerance;
-        int candidateIndex = 0;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            var anchor = anchors[i];
-            var anchorTime = anchor.At;
-            var windowStart = anchorTime - anchorTolerance.Before;
-            var windowEnd = anchorTime + anchorTolerance.After;
-
-            // Advance candidateIndex to window start
-            while (candidateIndex < candidates.Length &&
-                   candidates[candidateIndex].At < windowStart)
-            {
-                candidateIndex++;
-            }
-
-            // Scan candidates in window
-            int j = candidateIndex;
-            while (j < candidates.Length && candidates[j].At <= windowEnd)
-            {
-                buffer.Add(anchor, candidates[j], MatchType.PointExact);
-                j++;
-            }
-        }
-    }
-
-    private static void MatchPointToPointCandidatesSorted<TAnchor, TCandidate>(
-        ReadOnlySpan<TAnchor> anchors,
-        ReadOnlySpan<TCandidate> candidates,
-        MatchPolicy policy,
-        ref MatchBuffer<TAnchor, TCandidate> buffer)
-        where TAnchor : ITemporalPoint
-        where TCandidate : ITemporalPoint
-    {
-        var anchorTolerance = policy.AnchorTolerance;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            var anchor = anchors[i];
-            var anchorTime = anchor.At;
-            var windowStart = anchorTime - anchorTolerance.Before;
-            var windowEnd = anchorTime + anchorTolerance.After;
-
-            // Binary search for window start
-            int startIdx = BinarySearchLowerBound(candidates, windowStart);
-
-            // Scan forward until window end
-            for (int j = startIdx; j < candidates.Length && candidates[j].At <= windowEnd; j++)
-            {
-                buffer.Add(anchor, candidates[j], MatchType.PointExact);
-            }
-        }
-    }
-
-    #endregion
-
-    #region Point-to-Point Matching (Visitor)
-
-    private static int MatchPointToPointUnsortedVisitor<TAnchor, TCandidate, TVisitor>(
+    private static void MatchPointToPointUnsorted<TAnchor, TCandidate, TVisitor>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         MatchPolicy policy,
@@ -373,7 +176,6 @@ public static class MatchTemporal
         where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
     {
         var anchorTolerance = policy.AnchorTolerance;
-        int matchCount = 0;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -391,7 +193,6 @@ public static class MatchTemporal
                 if (candidateTime >= windowStart && candidateTime <= windowEnd)
                 {
                     visitor.OnMatch(in anchor, in candidate, i, j, MatchType.PointExact, null);
-                    matchCount++;
                     anchorMatched = true;
                 }
             }
@@ -401,11 +202,9 @@ public static class MatchTemporal
                 visitor.OnUnmatchedAnchor(in anchor, i);
             }
         }
-
-        return matchCount;
     }
 
-    private static int MatchPointToPointSortedVisitor<TAnchor, TCandidate, TVisitor>(
+    private static void MatchPointToPointSorted<TAnchor, TCandidate, TVisitor>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         MatchPolicy policy,
@@ -416,7 +215,6 @@ public static class MatchTemporal
     {
         var anchorTolerance = policy.AnchorTolerance;
         int candidateIndex = 0;
-        int matchCount = 0;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -438,7 +236,6 @@ public static class MatchTemporal
             while (j < candidates.Length && candidates[j].At <= windowEnd)
             {
                 visitor.OnMatch(in anchor, in candidates[j], i, j, MatchType.PointExact, null);
-                matchCount++;
                 anchorMatched = true;
                 j++;
             }
@@ -448,11 +245,9 @@ public static class MatchTemporal
                 visitor.OnUnmatchedAnchor(in anchor, i);
             }
         }
-
-        return matchCount;
     }
 
-    private static int MatchPointToPointCandidatesSortedVisitor<TAnchor, TCandidate, TVisitor>(
+    private static void MatchPointToPointCandidatesSorted<TAnchor, TCandidate, TVisitor>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         MatchPolicy policy,
@@ -462,7 +257,6 @@ public static class MatchTemporal
         where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
     {
         var anchorTolerance = policy.AnchorTolerance;
-        int matchCount = 0;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -479,7 +273,6 @@ public static class MatchTemporal
             for (int j = startIdx; j < candidates.Length && candidates[j].At <= windowEnd; j++)
             {
                 visitor.OnMatch(in anchor, in candidates[j], i, j, MatchType.PointExact, null);
-                matchCount++;
                 anchorMatched = true;
             }
 
@@ -488,15 +281,13 @@ public static class MatchTemporal
                 visitor.OnUnmatchedAnchor(in anchor, i);
             }
         }
-
-        return matchCount;
     }
 
     #endregion
 
-    #region Point-to-Interval Matching (Visitor)
+    #region Point-to-Interval Matching
 
-    private static int MatchPointToIntervalVisitor<TAnchor, TCandidate, TVisitor>(
+    private static void MatchPointToInterval<TAnchor, TCandidate, TVisitor>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         MatchPolicy policy,
@@ -506,7 +297,6 @@ public static class MatchTemporal
         where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
     {
         var anchorTolerance = policy.AnchorTolerance;
-        int matchCount = 0;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -523,7 +313,6 @@ public static class MatchTemporal
                 if (windowStart <= candidate.End && windowEnd >= candidate.Start)
                 {
                     visitor.OnMatch(in anchor, in candidate, i, j, MatchType.PointInInterval, null);
-                    matchCount++;
                     anchorMatched = true;
                 }
             }
@@ -533,15 +322,13 @@ public static class MatchTemporal
                 visitor.OnUnmatchedAnchor(in anchor, i);
             }
         }
-
-        return matchCount;
     }
 
     #endregion
 
-    #region Interval-to-Point Matching (Visitor)
+    #region Interval-to-Point Matching
 
-    private static int MatchIntervalToPointVisitor<TAnchor, TCandidate, TVisitor>(
+    private static void MatchIntervalToPoint<TAnchor, TCandidate, TVisitor>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         MatchPolicy policy,
@@ -551,7 +338,6 @@ public static class MatchTemporal
         where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
     {
         var candidateTolerance = policy.CandidateTolerance;
-        int matchCount = 0;
 
         for (int i = 0; i < anchors.Length; i++)
         {
@@ -568,7 +354,6 @@ public static class MatchTemporal
                 if (anchor.Start <= candidateWindowEnd && anchor.End >= candidateWindowStart)
                 {
                     visitor.OnMatch(in anchor, in candidate, i, j, MatchType.PointInInterval, null);
-                    matchCount++;
                     anchorMatched = true;
                 }
             }
@@ -578,15 +363,13 @@ public static class MatchTemporal
                 visitor.OnUnmatchedAnchor(in anchor, i);
             }
         }
-
-        return matchCount;
     }
 
     #endregion
 
-    #region Interval-to-Interval Matching (Visitor)
+    #region Interval-to-Interval Matching
 
-    private static int MatchIntervalToIntervalVisitor<TAnchor, TCandidate, TVisitor>(
+    private static void MatchIntervalToInterval<TAnchor, TCandidate, TVisitor>(
         ReadOnlySpan<TAnchor> anchors,
         ReadOnlySpan<TCandidate> candidates,
         MatchPolicy policy,
@@ -596,7 +379,6 @@ public static class MatchTemporal
         where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
     {
         var allowedRelations = policy.AllowedTemporalRelations;
-        int matchCount = 0;
 
         if (allowedRelations == AllowedRelations.Any)
         {
@@ -612,7 +394,6 @@ public static class MatchTemporal
                         candidate.Start, candidate.End);
 
                     visitor.OnMatch(in anchor, in candidate, i, j, MatchType.Interval, relation);
-                    matchCount++;
                 }
 
                 // With AllowedRelations.Any, every anchor matches every candidate, so no unmatched anchors
@@ -640,7 +421,6 @@ public static class MatchTemporal
                     if (IsRelationAllowed(relation, allowedRelations))
                     {
                         visitor.OnMatch(in anchor, in candidate, i, j, MatchType.Interval, relation);
-                        matchCount++;
                         anchorMatched = true;
                     }
                 }
@@ -648,139 +428,6 @@ public static class MatchTemporal
                 if (!anchorMatched)
                 {
                     visitor.OnUnmatchedAnchor(in anchor, i);
-                }
-            }
-        }
-
-        return matchCount;
-    }
-
-    #endregion
-
-    #region Point-to-Interval Matching
-
-    private static void MatchPointToInterval<TAnchor, TCandidate>(
-        ReadOnlySpan<TAnchor> anchors,
-        ReadOnlySpan<TCandidate> candidates,
-        MatchPolicy policy,
-        ref MatchBuffer<TAnchor, TCandidate> buffer)
-        where TAnchor : ITemporalPoint
-        where TCandidate : ITemporalInterval
-    {
-        var anchorTolerance = policy.AnchorTolerance;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            var anchor = anchors[i];
-            var anchorTime = anchor.At;
-            var windowStart = anchorTime - anchorTolerance.Before;
-            var windowEnd = anchorTime + anchorTolerance.After;
-
-            for (int j = 0; j < candidates.Length; j++)
-            {
-                var candidate = candidates[j];
-
-                // Point-to-Interval match: the point's tolerance window must intersect with the interval
-                // Intersection occurs when: windowStart <= candidate.End AND windowEnd >= candidate.Start
-                if (windowStart <= candidate.End && windowEnd >= candidate.Start)
-                {
-                    // PointInInterval does not store relation (per INV-008)
-                    buffer.Add(anchor, candidate, MatchType.PointInInterval);
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    #region Interval-to-Point Matching
-
-    private static void MatchIntervalToPoint<TAnchor, TCandidate>(
-        ReadOnlySpan<TAnchor> anchors,
-        ReadOnlySpan<TCandidate> candidates,
-        MatchPolicy policy,
-        ref MatchBuffer<TAnchor, TCandidate> buffer)
-        where TAnchor : ITemporalInterval
-        where TCandidate : ITemporalPoint
-    {
-        var candidateTolerance = policy.CandidateTolerance;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            var anchor = anchors[i];
-
-            for (int j = 0; j < candidates.Length; j++)
-            {
-                var candidate = candidates[j];
-                var candidateTime = candidate.At;
-
-                // Apply tolerance to candidate point to make it an interval
-                var candidateWindowStart = candidateTime - candidateTolerance.Before;
-                var candidateWindowEnd = candidateTime + candidateTolerance.After;
-
-                // Interval-to-Point match: the candidate's tolerance window must intersect with the anchor interval
-                // Intersection occurs when: anchor.Start <= candidateWindowEnd AND anchor.End >= candidateWindowStart
-                if (anchor.Start <= candidateWindowEnd && anchor.End >= candidateWindowStart)
-                {
-                    // PointInInterval does not store relation (per INV-008)
-                    buffer.Add(anchor, candidate, MatchType.PointInInterval);
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    #region Interval-to-Interval Matching
-
-    private static void MatchIntervalToInterval<TAnchor, TCandidate>(
-        ReadOnlySpan<TAnchor> anchors,
-        ReadOnlySpan<TCandidate> candidates,
-        MatchPolicy policy,
-        ref MatchBuffer<TAnchor, TCandidate> buffer)
-        where TAnchor : ITemporalInterval
-        where TCandidate : ITemporalInterval
-    {
-        var allowedRelations = policy.AllowedTemporalRelations;
-
-        // Fast-path: if all relations are allowed, match all pairs (all 13 Allen relations)
-        if (allowedRelations == AllowedRelations.Any)
-        {
-            for (int i = 0; i < anchors.Length; i++)
-            {
-                var anchor = anchors[i];
-
-                for (int j = 0; j < candidates.Length; j++)
-                {
-                    var candidate = candidates[j];
-
-                    var relation = DetermineAllenRelation(
-                        anchor.Start, anchor.End,
-                        candidate.Start, candidate.End);
-                    buffer.Add(anchor, candidate, MatchType.Interval, relation);
-                }
-            }
-        }
-        else
-        {
-            // Filtered path: compute relation and check if allowed
-            for (int i = 0; i < anchors.Length; i++)
-            {
-                var anchor = anchors[i];
-
-                for (int j = 0; j < candidates.Length; j++)
-                {
-                    var candidate = candidates[j];
-
-                    var relation = DetermineAllenRelation(
-                        anchor.Start, anchor.End,
-                        candidate.Start, candidate.End);
-
-                    // Check if this relation is allowed
-                    if (IsRelationAllowed(relation, allowedRelations))
-                    {
-                        buffer.Add(anchor, candidate, MatchType.Interval, relation);
-                    }
                 }
             }
         }

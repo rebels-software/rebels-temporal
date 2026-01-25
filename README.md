@@ -180,17 +180,17 @@ var policy = new MatchPolicy
 
 // Allocate buffer for results
 var buffer = new MatchPair<SensorReading, SensorReading>[100];
-var matchBuffer = new MatchBuffer<SensorReading, SensorReading> { Pairs = buffer };
+var visitor = new BufferVisitor<SensorReading, SensorReading>(buffer);
 
 // Perform matching using fluent API
-int matchCount = MatchTemporal.Points.With.Points(
+MatchTemporal.Points.With.Points(
     telemetryEvents,
     commandEvents,
     policy,
-    ref matchBuffer);
+    ref visitor);
 
 // Process results
-for (int i = 0; i < matchCount; i++)
+for (int i = 0; i < visitor.MatchCount; i++)
 {
     var match = buffer[i];
     Console.WriteLine($"Matched: {match.Anchor.Value} ↔ {match.Candidate.Value} " +
@@ -220,13 +220,13 @@ var policy = new MatchPolicy
 };
 
 var buffer = new MatchPair<SensorReading, DeviceSession>[100];
-var matchBuffer = new MatchBuffer<SensorReading, DeviceSession> { Pairs = buffer };
+var visitor = new BufferVisitor<SensorReading, DeviceSession>(buffer);
 
-int matchCount = MatchTemporal.Points.With.Intervals(
+MatchTemporal.Points.With.Intervals(
     events,
     sessions,
     policy,
-    ref matchBuffer);
+    ref visitor);
 ```
 
 #### Match Interval-to-Interval with Allen Relations
@@ -254,16 +254,16 @@ var policy = new MatchPolicy
 };
 
 var buffer = new MatchPair<DeviceSession, DeviceSession>[100];
-var matchBuffer = new MatchBuffer<DeviceSession, DeviceSession> { Pairs = buffer };
+var visitor = new BufferVisitor<DeviceSession, DeviceSession>(buffer);
 
-int matchCount = MatchTemporal.Intervals.With.Intervals(
+MatchTemporal.Intervals.With.Intervals(
     chargingSessions,
     usageSessions,
     policy,
-    ref matchBuffer);
+    ref visitor);
 
 // Access Allen relation for each match
-for (int i = 0; i < matchCount; i++)
+for (int i = 0; i < visitor.MatchCount; i++)
 {
     var match = buffer[i];
     Console.WriteLine($"Interval relation: {match.Relation}");
@@ -374,326 +374,3 @@ We welcome contributions! Please follow these steps:
 
 ## License
  This project is licensed under the [Apache 2.0 License](LICENSE). ## Contact For questions or support, open an issue or contact us at [we@rebels.software](mailto:we@rebels.software).
-
- temp:
- Tak napisales o projekcie:
- ✅ MOCNE STRONY (Co jest bardzo dobre)
-
-  1. Doskonała dyscyplina architektoniczna
-
-  - ADRs (Architecture Decision Records) - To jest wzorcowe podejście. 13 ADRów dokumentuje każdą istotną decyzję. To rzadkość w projektach open source.
-  - Invariants - Explicite zapisane niezmienniki systemu to coś, czego brakuje w 99% projektów. To sprawia, że każdy contributor wie, czego NIE wolno zrobić.
-  - Consistency - Widać, że projekt ma jednego architekta lub bardzo zgrany zespół. Wszystko jest spójne.
-
-  2. Rzeczywista optymalizacja wydajności
-
-  // O(n×m) → O(n+m) to 255x przyśpieszenie
-  InputOrdering.None:  14.4 ms  // nested loops
-  InputOrdering.Both:  56 μs    // dual-pointer scan
-
-  To NIE jest premature optimization - to faktycznie rozwiązuje realny problem IoT:
-  - Zero alokacji w hot path = brak GC pauses
-  - ReadOnlySpan<T> = brak kopiowania danych
-  - User-provided buffers = pełna kontrola nad pamięcią
-
-  Problem: W IoT z 10,000 sensorów wysyłających dane co sekundę, każda milisekunda GC pause = stracone eventy.
-
-  3. Allen's Interval Algebra - solidne fundamenty matematyczne
-
-  Użycie algebry Allen'a to profesjonalne podejście. To nie jest "wymyślone od nowa", tylko sprawdzona teoria z 1983 roku. Implementacja w DetermineAllenRelation() (linie 461-493) wygląda poprawnie.
-
-  4. Fluent API jest eleganckie
-
-  MatchTemporal.Points.With.Points(...)
-  MatchTemporal.Intervals.With.Intervals(...)
-
-  Czytelne, type-safe, odkrywalne przez IntelliSense. Dobry design.
-
-  ---
-  ⚠️ OBSZARY DO POPRAWY (Co można zrobić lepiej)
-
-  1. API jest zbyt niskopoziomowe dla przeciętnego developera
-
-  Problem:
-  // Trzeba ręcznie alokować buffer, przekazywać przez ref, sprawdzać count...
-  var buffer = new MatchPair<SensorReading, CommandEvent>[100];
-  var matchBuffer = new MatchBuffer<SensorReading, CommandEvent> { Pairs = buffer };
-  int matchCount = MatchTemporal.Points.With.Points(
-      anchors, candidates, policy, ref matchBuffer);
-
-  for (int i = 0; i < matchCount; i++) {  // ręczna iteracja
-      var match = buffer[i];
-  }
-
-  Co większość developerów chce:
-  var matches = MatchTemporal.Points.With.Points(anchors, candidates, policy);
-  foreach (var match in matches) { ... }
-
-  Rozwiązanie: Dodaj convenience layer:
-  // High-performance path (obecny)
-  public static int Points<TAnchor, TCandidate>(
-      ReadOnlySpan<TAnchor> anchors,
-      ReadOnlySpan<TCandidate> candidates,
-      MatchPolicy policy,
-      ref MatchBuffer<TAnchor, TCandidate> buffer)
-
-  // Convenience path (NOWY - dla 80% use cases)
-  public static IEnumerable<MatchPair<TAnchor, TCandidate>> Points<TAnchor, TCandidate>(
-      IEnumerable<TAnchor> anchors,
-      IEnumerable<TCandidate> candidates,
-      MatchPolicy policy)
-  {
-      // Internally użyj pooled buffer, ToArray, etc.
-  }
-
-  Opcja: Możesz użyć ArrayPool<T> dla convenience API, żeby dalej minimalizować alokacje.
-
-  2. Brak wsparcia dla streaming/real-time scenarios
-
-  IoT to często streaming data, nie batch processing. Obecny API wymaga:
-  1. Mieć WSZYSTKIE anchory w pamięci
-  2. Mieć WSZYSTKIE candidates w pamięci
-  3. Dopiero wtedy matchować
-
-  Realny IoT scenario:
-  - Events przychodzą ze stream (Kafka, Azure IoT Hub, MQTT)
-  - Nie możesz czekać aż "zbierze się batch"
-  - Chcesz matchować "on the fly"
-
-  Propozycja:
-  // Streaming matcher - utrzymuje sliding window
-  public class StreamingMatcher<TAnchor, TCandidate>
-      where TAnchor : ITemporalPoint
-      where TCandidate : ITemporalPoint
-  {
-      private readonly CircularBuffer<TAnchor> _anchorWindow;
-      private readonly CircularBuffer<TCandidate> _candidateWindow;
-
-      public void AddAnchor(TAnchor anchor) { }
-      public void AddCandidate(TCandidate candidate) { }
-
-      // Zwraca matches dla events w sliding window
-      public void GetMatches(ref MatchBuffer<TAnchor, TCandidate> buffer) { }
-  }
-
-  To byłoby game changer dla real-time IoT.
-
-  3. Brak obsługi late arrivals / out-of-order events
-
-  W distributed IoT systemach events arrive out of order:
-  - Sensor stracił połączenie, buforował lokalne, potem wysłał wszysko
-  - Network latency z różnych regionów
-  - Różne clock skew między urządzeniami
-
-  Problem: Twoje InputOrdering.Both założenie (sorted data) łamie się w realnym świecie.
-
-  Propozycja: Dodaj watermarking mechanism:
-  public class WatermarkedMatcher<TAnchor, TCandidate>
-  {
-      public void SetWatermark(DateTimeOffset watermark);  // "no events before this time will arrive"
-      public void ProcessEvent(TEvent evt);
-      public void GetCompletedMatches(ref MatchBuffer buffer);  // matches where all data arrived
-  }
-
-  4. Brak metryk i observability
-
-  W production IoT systemach potrzebujesz:
-  - Ile events zostało zmatchowanych?
-  - Ile events nie znalazło pary?
-  - Jaka jest średnia latencja matchingu?
-  - Ile events jest "too old" lub "too new"?
-
-  Propozycja:
-  public class MatchMetrics
-  {
-      public int TotalAnchors { get; set; }
-      public int TotalCandidates { get; set; }
-      public int MatchedPairs { get; set; }
-      public int UnmatchedAnchors => TotalAnchors - MatchedPairs;
-      public TimeSpan ProcessingTime { get; set; }
-  }
-
-  // W API:
-  public static int Points<TAnchor, TCandidate>(
-      ...,
-      out MatchMetrics metrics)
-
-  5. Tolerancje są symetryczne w czasie, ale nie w semantyce
-
-  TimeTolerance.Symmetric(TimeSpan.FromSeconds(5))  // ±5s
-
-  Problem: W IoT często masz asymmetric causality:
-  - Command wysłany o 10:00:00
-  - Sensor response może przyjść 10:00:00 do 10:00:05 (latencja)
-  - Ale sensor response NIE MOŻE przyjść przed command (causality violation)
-
-  Propozycja: Rozszerz semantykę:
-  public enum ToleranceSemantics
-  {
-      Symmetric,      // ±tolerance (obecne)
-      CausalForward,  // 0 before, +tolerance after (command → response)
-      CausalBackward  // -tolerance before, 0 after (response → command lookup)
-  }
-
-  6. Brak integracji z popularnych IoT platforms
-
-  ADR-7 mówi "no external dependencies", ale to sprawia, że projekt jest trudny do użycia w realnych scenariuszach.
-
-  Propozycja: Stwórz osobne projekty (w stylu Serilog):
-  - Rebels.Temporal - core (zero dependencies) ✅
-  - Rebels.Temporal.Azure - integracja z Azure IoT Hub, Event Hubs
-  - Rebels.Temporal.Kafka - integracja z Kafka Streams
-  - Rebels.Temporal.Mqtt - integracja z MQTT brokers
-
-  To nie łamie ADR-7, bo core pozostaje pure.
-
-  7. TimeTolerance przechowuje TimeSpan, ale w IoT często masz clock drift
-
-  W distributed IoT systemach masz clock skew między urządzeniami. Dwa sensory mogą mieć różnicę np. 200ms w zegarach.
-
-  Problem: Twój TimeTolerance nie rozróżnia:
-  - "events within 1 second" (user intent)
-  - "clocks may be off by 500ms" (system reality)
-
-  Propozycja:
-  public class MatchPolicy
-  {
-      public TimeTolerance AnchorTolerance { get; set; }
-      public TimeSpan ClockSkewTolerance { get; set; }  // NOWE - dodatkowa tolerancja na clock drift
-  }
-
-  8. Brak wsparcia dla "confidence scoring"
-
-  W IoT często matchujesz niepewne dane. Przykład:
-  - Anchor: 10:00:00
-  - Candidate A: 10:00:00.001 (bardzo bliski)
-  - Candidate B: 10:00:01.500 (w tolerancji ±2s, ale daleki)
-
-  Oba są valid matches, ale A jest lepszy. Obecne API nie daje tego znać.
-
-  Propozycja:
-  public readonly struct MatchPair<TAnchor, TCandidate>
-  {
-      public TAnchor Anchor { get; }
-      public TCandidate Candidate { get; }
-      public MatchType MatchType { get; }
-      public TemporalRelation? Relation { get; }
-
-      public double ConfidenceScore { get; }  // NOWE: 0.0-1.0, based on time delta
-  }
-
-  ---
-  🎯 OCENA KOŃCOWA
-
-  Jako Senior Developer: ⭐⭐⭐⭐½ (4.5/5)
-
-  Plusy:
-  - Kod bardzo czysty, SOLID principles
-  - Doskonała dokumentacja (XML comments, ADRs)
-  - Performance-aware bez przedwczesnej optymalizacji
-  - Testy (Chicago School approach) są właściwe
-
-  Minusy:
-  - API zbyt niskopoziomowe - brakuje convenience layer
-  - Zero abstrakcji dla częstych use cases
-
-  Jako Architekt: ⭐⭐⭐⭐ (4/5)
-
-  Plusy:
-  - ADRs i Invariants to wzór do naśladowania
-  - Clear boundaries (pure domain library)
-  - Excellent separation of concerns
-  - Allen's Algebra to solidny fundament matematyczny
-
-  Minusy:
-  - Za sztywny "no dependencies" dogmat - utrudnia adopcję
-  - Brak extension points dla custom matching strategies
-  - No plugin architecture dla telemetry/metrics
-
-  Jako Znawca IoT: ⭐⭐⭐ (3/5)
-
-  Plusy:
-  - Zero-allocation design jest kluczowy dla edge devices
-  - Sorted data optimization (O(n+m)) rozwiązuje real problem
-  - DateTimeOffset-only chroni przed timezone bugs
-
-  Minusy:
-  - Brak streaming support - to największy problem
-  - Brak obsługi late arrivals / out-of-order - krityczny w distributed IoT
-  - Brak watermarking - jak wiesz, że "dane są kompletne"?
-  - Brak clock skew handling - każdy distributed system ma clock drift
-  - Batch-only mindset - IoT to streaming, nie batch processing
-  - Brak integracji z Azure IoT Hub, AWS IoT Core, MQTT, Kafka
-
-  ---
-  📋 REKOMENDACJE
-
-  Krótkoterminowe (Quick Wins):
-
-  1. Dodaj convenience API - wrapper z IEnumerable<T> dla 80% use cases
-  2. Dodaj metrics/observability - MatchMetrics struct
-  3. Confidence scoring - ranked matches
-
-  Średnioterminowe:
-
-  4. Streaming support - StreamingMatcher z sliding window
-  5. Late arrival handling - watermarking mechanism
-  6. Integration packages - Rebels.Temporal.Azure, .Kafka, .Mqtt
-
-  Długoterminowe:
-
-  7. Complex Event Processing (CEP) - patterns like "A followed by B within 5 seconds"
-  8. State machine matching - dla workflow scenarios
-  9. Distributed matching - partitioned matching across nodes
-
-  ---
-  💭 CZY JEST TO UŻYTECZNE?
-
-  TAK, ale z zastrzeżeniami:
-
-  ✅ Użyteczne dla:
-  - Batch processing telemetry (post-facto analysis)
-  - Small-scale IoT (< 1000 devices)
-  - Edge devices z ograniczoną pamięcią
-  - Scenarios gdzie masz WSZYSTKIE dane przed matchingiem
-
-  ❌ Mniej użyteczne dla:
-  - Large-scale streaming IoT (10,000+ devices)
-  - Real-time alerting systems
-  - Distributed event processing
-  - Systems z high out-of-order arrival rate
-
-  ---
-  🚀 CZY MOŻNA LEPIEJ?
-
-  TAK, ale to ewolucja, nie rewolucja:
-
-  Projekt ma świetne fundamenty. Nie trzeba wszystkiego przepisywać. Proponuję:
-
-  1. Zachowaj core (obecny design) - to jest solidne
-  2. Dodaj streaming layer - nowa funkcjonalność
-  3. Stwórz ecosystem - integration packages
-  4. Rozbuduj o CEP - complex event processing
-
-  Analogia: To jak Redis:
-  - Redis Core - prosty, szybki, zero dependencies
-  - Redis Modules - streaming, AI, JSON, etc.
-  - Rebels.Temporal może być podobnie
-
-  ---
-  📊 BENCHMARK SUGGESTION
-
-  Zrób porównanie z konkurencją:
-  - NodaTime - ma interval matching?
-  - Rx (Reactive Extensions) - time-based operators
-  - Custom solutions - co ludzie piszą teraz?
-
-  Pokaż, że Twoje podejście jest measurably better.
-
-  ---
-  TL;DR: Projekt ma świetny core, doskonałą architekturę i dokumentację, ale jest zbyt academic/theoretical. Brakuje mu pragmatic features dla real-world IoT streaming scenarios. Dodanie streaming support i integration packages uczyniłoby go production-ready.
-
-Spiszmy jako todolist gdzieś w głównym readme.md: convenience layer, benchmarks z nodatime,rx, confidence scoring, matchmetrics, complex event processing, streaming support, rozbudowac ecosystem (integration packages). Napisz w kilku          
-  zdaniach co kazdy z tych etapow ma robic. Pozniej porozmawiamy o kazdym.  
-
-Jako drugi krok chce bys spisal jako osobny plik, np doubts.md : no plugin architecture, brak extension points, za sztywny dogmat no dependencies, brak obslugi late arrivals i out of order, brak watermarking, brak clock skew, batch only mindset, integracja z iothub, core, mqtt. Je bede chcial omowic, bo moze brakuje czegos w ADR i celach biblioteki by to bylo jasne od poczatku

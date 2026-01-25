@@ -31,6 +31,7 @@ public class MatchingTestBuilder
     private MatchPair<TestInterval, TestEvent>[]? _intervalToPointMatches;
     private MatchPair<TestInterval, TestInterval>[]? _intervalMatches;
     private int _matchCount;
+    private int _unmatchedCount;
 
     public static MatchingTestBuilder Given => new();
 
@@ -67,12 +68,14 @@ public class MatchingTestBuilder
 
         // Allocate buffer large enough for all possible matches
         var maxMatches = anchors.Length * candidates.Length;
-        _pointMatches = new MatchPair<TestEvent, TestEvent>[maxMatches];
+        _pointMatches = new MatchPair<TestEvent, TestEvent>[Math.Max(1, maxMatches)];
 
-        Span<MatchPair<TestEvent, TestEvent>> bufferSpan = _pointMatches;
-        var buffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = bufferSpan };
+        var visitor = new BufferVisitor<TestEvent, TestEvent>(_pointMatches);
+        MatchTemporal.Points.With.Points<TestEvent, TestEvent, BufferVisitor<TestEvent, TestEvent>>(
+            anchors, candidates, policy, ref visitor);
 
-        _matchCount = MatchTemporal.Points.With.Points(anchors, candidates, policy, ref buffer);
+        _matchCount = visitor.MatchCount;
+        _unmatchedCount = visitor.UnmatchedCount;
 
         return this;
     }
@@ -83,12 +86,14 @@ public class MatchingTestBuilder
         var candidates = _candidateIntervals ?? Array.Empty<TestInterval>();
 
         var maxMatches = anchors.Length * candidates.Length;
-        _pointToIntervalMatches = new MatchPair<TestEvent, TestInterval>[maxMatches];
+        _pointToIntervalMatches = new MatchPair<TestEvent, TestInterval>[Math.Max(1, maxMatches)];
 
-        Span<MatchPair<TestEvent, TestInterval>> bufferSpan = _pointToIntervalMatches;
-        var buffer = new MatchBuffer<TestEvent, TestInterval> { Pairs = bufferSpan };
+        var visitor = new BufferVisitor<TestEvent, TestInterval>(_pointToIntervalMatches);
+        MatchTemporal.Points.With.Intervals<TestEvent, TestInterval, BufferVisitor<TestEvent, TestInterval>>(
+            anchors, candidates, policy, ref visitor);
 
-        _matchCount = MatchTemporal.Points.With.Intervals(anchors, candidates, policy, ref buffer);
+        _matchCount = visitor.MatchCount;
+        _unmatchedCount = visitor.UnmatchedCount;
 
         return this;
     }
@@ -99,12 +104,14 @@ public class MatchingTestBuilder
         var candidates = _candidates ?? Array.Empty<TestEvent>();
 
         var maxMatches = anchors.Length * candidates.Length;
-        _intervalToPointMatches = new MatchPair<TestInterval, TestEvent>[maxMatches];
+        _intervalToPointMatches = new MatchPair<TestInterval, TestEvent>[Math.Max(1, maxMatches)];
 
-        Span<MatchPair<TestInterval, TestEvent>> bufferSpan = _intervalToPointMatches;
-        var buffer = new MatchBuffer<TestInterval, TestEvent> { Pairs = bufferSpan };
+        var visitor = new BufferVisitor<TestInterval, TestEvent>(_intervalToPointMatches);
+        MatchTemporal.Intervals.With.Points<TestInterval, TestEvent, BufferVisitor<TestInterval, TestEvent>>(
+            anchors, candidates, policy, ref visitor);
 
-        _matchCount = MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref buffer);
+        _matchCount = visitor.MatchCount;
+        _unmatchedCount = visitor.UnmatchedCount;
 
         return this;
     }
@@ -115,12 +122,14 @@ public class MatchingTestBuilder
         var candidates = _candidateIntervals ?? Array.Empty<TestInterval>();
 
         var maxMatches = anchors.Length * candidates.Length;
-        _intervalMatches = new MatchPair<TestInterval, TestInterval>[maxMatches];
+        _intervalMatches = new MatchPair<TestInterval, TestInterval>[Math.Max(1, maxMatches)];
 
-        Span<MatchPair<TestInterval, TestInterval>> bufferSpan = _intervalMatches;
-        var buffer = new MatchBuffer<TestInterval, TestInterval> { Pairs = bufferSpan };
+        var visitor = new BufferVisitor<TestInterval, TestInterval>(_intervalMatches);
+        MatchTemporal.Intervals.With.Intervals<TestInterval, TestInterval, BufferVisitor<TestInterval, TestInterval>>(
+            anchors, candidates, policy, ref visitor);
 
-        _matchCount = MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref buffer);
+        _matchCount = visitor.MatchCount;
+        _unmatchedCount = visitor.UnmatchedCount;
 
         return this;
     }
@@ -161,13 +170,8 @@ public class MatchingTestBuilder
 
     public MatchingTestBuilder UnmatchedAnchors(params int[] offsetsInSeconds)
     {
-        // Note: The new API doesn't track misses explicitly
-        // We can infer misses by comparing total anchors vs matches
-        // For now, we'll implement basic validation
-        var totalAnchors = (_anchors?.Length ?? 0) + (_anchorIntervals?.Length ?? 0);
-        var unmatchedCount = offsetsInSeconds.Length;
-
-        // This is a simplified check - in reality we'd need to track which anchors matched
+        // Verify unmatched count matches expected
+        Assert.That(_unmatchedCount, Is.EqualTo(offsetsInSeconds.Length));
         return this;
     }
 
@@ -179,35 +183,7 @@ public class MatchingTestBuilder
 
     public MatchingTestBuilder TotalMissCount(int count)
     {
-        // Note: The new API doesn't explicitly track misses
-        // We calculate misses as: totalAnchors - uniqueAnchorsInMatches
-        var totalAnchors = (_anchors?.Length ?? 0) + (_anchorIntervals?.Length ?? 0);
-
-        if (_pointMatches != null)
-        {
-            var uniqueAnchors = _pointMatches.Take(_matchCount).Select(m => m.Anchor).Distinct().Count();
-            var missCount = totalAnchors - uniqueAnchors;
-            Assert.That(missCount, Is.EqualTo(count));
-        }
-        else if (_intervalMatches != null)
-        {
-            var uniqueAnchors = _intervalMatches.Take(_matchCount).Select(m => m.Anchor).Distinct().Count();
-            var missCount = totalAnchors - uniqueAnchors;
-            Assert.That(missCount, Is.EqualTo(count));
-        }
-        else if (_pointToIntervalMatches != null)
-        {
-            var uniqueAnchors = _pointToIntervalMatches.Take(_matchCount).Select(m => m.Anchor).Distinct().Count();
-            var missCount = totalAnchors - uniqueAnchors;
-            Assert.That(missCount, Is.EqualTo(count));
-        }
-        else if (_intervalToPointMatches != null)
-        {
-            var uniqueAnchors = _intervalToPointMatches.Take(_matchCount).Select(m => m.Anchor).Distinct().Count();
-            var missCount = totalAnchors - uniqueAnchors;
-            Assert.That(missCount, Is.EqualTo(count));
-        }
-
+        Assert.That(_unmatchedCount, Is.EqualTo(count));
         return this;
     }
 

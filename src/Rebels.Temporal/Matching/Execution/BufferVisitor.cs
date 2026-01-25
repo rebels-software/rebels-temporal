@@ -15,13 +15,14 @@
 namespace Rebels.Temporal;
 
 /// <summary>
-/// A visitor that writes matches to a user-provided buffer and tracks unmatched anchors.
+/// A reference implementation of <see cref="IMatchVisitor{TAnchor, TCandidate}"/> that writes
+/// matches to a user-provided buffer and tracks unmatched anchors.
 /// </summary>
 /// <typeparam name="TAnchor">Type of anchor events.</typeparam>
 /// <typeparam name="TCandidate">Type of candidate events.</typeparam>
 /// <remarks>
-/// This is a reference implementation equivalent to <see cref="MatchBuffer{TAnchor, TCandidate}"/>
-/// but using the visitor pattern. Used for benchmarking visitor vs buffer API performance.
+/// This is the primary visitor implementation for collecting match results into a span.
+/// It provides both match storage and observability (match count, unmatched anchor count).
 /// </remarks>
 public ref struct BufferVisitor<TAnchor, TCandidate> : IMatchVisitor<TAnchor, TCandidate>
 {

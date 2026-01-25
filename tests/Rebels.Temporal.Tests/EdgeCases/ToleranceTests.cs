@@ -162,15 +162,15 @@ public class ToleranceTests : MatchingTestBase
         // Interval [10, 20] should match because interval end (20) == candidate window start (20)
         var policy = TestPolicies.BothSidesTolerance;
 
-        var anchors = TestDataGenerator.CreateIntervals((10, 20));
-        var candidates = TestDataGenerator.CreatePoints(22);
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((10, 20));
+        ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(22);
 
         var buffer = new MatchPair<TestInterval, TestEvent>[10];
-        var matchBuffer = new MatchBuffer<TestInterval, TestEvent> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestInterval, TestEvent>(buffer);
 
-        var count = MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref matchBuffer);
+        MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref visitor);
 
-        Assert.That(count, Is.EqualTo(1));
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
     }
 
     [Test]
@@ -182,15 +182,15 @@ public class ToleranceTests : MatchingTestBase
         // Interval [10, 20] does not intersect [23, 27]
         var policy = TestPolicies.BothSidesTolerance;
 
-        var anchors = TestDataGenerator.CreateIntervals((10, 20));
-        var candidates = TestDataGenerator.CreatePoints(25);
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((10, 20));
+        ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(25);
 
         var buffer = new MatchPair<TestInterval, TestEvent>[10];
-        var matchBuffer = new MatchBuffer<TestInterval, TestEvent> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestInterval, TestEvent>(buffer);
 
-        var count = MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref matchBuffer);
+        MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref visitor);
 
-        Assert.That(count, Is.EqualTo(0));
+        Assert.That(visitor.MatchCount, Is.EqualTo(0));
     }
 
     [Test]
@@ -202,15 +202,15 @@ public class ToleranceTests : MatchingTestBase
         // Interval start (10) == candidate window end (10)
         var policy = TestPolicies.BothSidesTolerance;
 
-        var anchors = TestDataGenerator.CreateIntervals((10, 20));
-        var candidates = TestDataGenerator.CreatePoints(8);
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((10, 20));
+        ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(8);
 
         var buffer = new MatchPair<TestInterval, TestEvent>[10];
-        var matchBuffer = new MatchBuffer<TestInterval, TestEvent> { Pairs = buffer };
+        var visitor = new BufferVisitor<TestInterval, TestEvent>(buffer);
 
-        var count = MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref matchBuffer);
+        MatchTemporal.Intervals.With.Points(anchors, candidates, policy, ref visitor);
 
-        Assert.That(count, Is.EqualTo(1));
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
     }
 
     #endregion

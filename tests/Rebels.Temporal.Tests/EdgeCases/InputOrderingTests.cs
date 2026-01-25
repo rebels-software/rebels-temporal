@@ -41,15 +41,15 @@ public class InputOrderingTests : MatchingTestBase
     [Test]
     public void SortedCandidates_Should_Throw_When_Candidates_Not_Sorted()
     {
-        // Candidates are not sorted: 20, 10, 0
-        var anchors = TestDataGenerator.CreatePoints(0, 10, 20);
-        var candidates = TestDataGenerator.CreatePoints(20, 10, 0);
-
         Assert.Throws<ArgumentException>(() =>
         {
+            // Candidates are not sorted: 20, 10, 0
+            ReadOnlySpan<TestEvent> anchors = TestDataGenerator.CreatePoints(0, 10, 20);
+            ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(20, 10, 0);
+
             var buffer = new MatchPair<TestEvent, TestEvent>[100];
-            var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
-            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.SortedCandidates, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
+            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.SortedCandidates, ref visitor);
         });
     }
 
@@ -72,45 +72,44 @@ public class InputOrderingTests : MatchingTestBase
     [Test]
     public void BothSorted_Should_Throw_When_Anchors_Not_Sorted()
     {
-        // Anchors are not sorted: 20, 10, 0
-        var anchors = TestDataGenerator.CreatePoints(20, 10, 0);
-        var candidates = TestDataGenerator.CreatePoints(0, 10, 20);
-
         Assert.Throws<ArgumentException>(() =>
         {
+            // Anchors are not sorted: 20, 10, 0
+            ReadOnlySpan<TestEvent> anchors = TestDataGenerator.CreatePoints(20, 10, 0);
+            ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(0, 10, 20);
+
             var buffer = new MatchPair<TestEvent, TestEvent>[100];
-            var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
-            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.BothSorted, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
+            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.BothSorted, ref visitor);
         });
     }
 
     [Test]
     public void BothSorted_Should_Throw_When_Candidates_Not_Sorted()
     {
-        // Candidates are not sorted: 20, 10, 0
-        var anchors = TestDataGenerator.CreatePoints(0, 10, 20);
-        var candidates = TestDataGenerator.CreatePoints(20, 10, 0);
-
         Assert.Throws<ArgumentException>(() =>
         {
+            // Candidates are not sorted: 20, 10, 0
+            ReadOnlySpan<TestEvent> anchors = TestDataGenerator.CreatePoints(0, 10, 20);
+            ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(20, 10, 0);
+
             var buffer = new MatchPair<TestEvent, TestEvent>[100];
-            var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
-            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.BothSorted, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
+            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.BothSorted, ref visitor);
         });
     }
 
     [Test]
     public void BothSorted_Should_Throw_When_Both_Not_Sorted()
     {
-        // Both are not sorted
-        var anchors = TestDataGenerator.CreatePoints(20, 10, 0);
-        var candidates = TestDataGenerator.CreatePoints(30, 20, 10);
-
         Assert.Throws<ArgumentException>(() =>
         {
+            ReadOnlySpan<TestEvent> anchors = TestDataGenerator.CreatePoints(20, 10, 0);
+            ReadOnlySpan<TestEvent> candidates = TestDataGenerator.CreatePoints(30, 20, 10);
+
             var buffer = new MatchPair<TestEvent, TestEvent>[100];
-            var matchBuffer = new MatchBuffer<TestEvent, TestEvent> { Pairs = buffer };
-            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.BothSorted, ref matchBuffer);
+            var visitor = new BufferVisitor<TestEvent, TestEvent>(buffer);
+            MatchTemporal.Points.With.Points(anchors, candidates, TestPolicies.BothSorted, ref visitor);
         });
     }
 
@@ -180,7 +179,7 @@ public class InputOrderingTests : MatchingTestBase
         .When
             .MatchPointToPointIsCalled(TestPolicies.BothSorted)
         .Then
-            .TotalMatchCount(8); // 2×2 + 2×2
+            .TotalMatchCount(8); // 2x2 + 2x2
     }
 
     [Test]
