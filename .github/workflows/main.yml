@@ -17,7 +17,7 @@ jobs:
       CODE_COV_TOKEN: ${{ secrets.CODE_COV_TOKEN }}
 
   create-tag:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [build-and-test]
     uses: rebels-software/github-actions/.github/workflows/create-version-tag.yaml@v1.0.0
     with:
