@@ -360,4 +360,50 @@ public class InputOrderingTests : MatchingTestBase
     }
 
     #endregion
+
+    #region Unmatched Anchors with Sorted Algorithms
+
+    [Test]
+    public void SortedCandidates_Should_Report_Unmatched_Anchors_When_No_Match_Found()
+    {
+        // Anchor at 100 has no matching candidate
+        Given
+            .AnchorOffsets(0, 10, 100)
+            .CandidateOffsets(0, 10, 20)
+        .When
+            .MatchPointToPointIsCalled(TestPolicies.SortedCandidates)
+        .Then
+            .TotalMatchCount(2)
+            .TotalMissCount(1);
+    }
+
+    [Test]
+    public void SortedCandidates_Should_Report_All_Unmatched_When_No_Candidates_In_Range()
+    {
+        // All anchors are outside candidate range
+        Given
+            .AnchorOffsets(100, 200, 300)
+            .CandidateOffsets(0, 10, 20)
+        .When
+            .MatchPointToPointIsCalled(TestPolicies.SortedCandidates)
+        .Then
+            .TotalMatchCount(0)
+            .TotalMissCount(3);
+    }
+
+    [Test]
+    public void BothSorted_Should_Report_Unmatched_Anchors_When_No_Match_Found()
+    {
+        // Anchor at 50 has no matching candidate
+        Given
+            .AnchorOffsets(0, 10, 50)
+            .CandidateOffsets(0, 10, 20)
+        .When
+            .MatchPointToPointIsCalled(TestPolicies.BothSorted)
+        .Then
+            .TotalMatchCount(2)
+            .TotalMissCount(1);
+    }
+
+    #endregion
 }

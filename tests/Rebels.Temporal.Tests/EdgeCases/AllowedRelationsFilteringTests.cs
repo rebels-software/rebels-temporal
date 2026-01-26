@@ -269,4 +269,114 @@ public class AllowedRelationsFilteringTests : MatchingTestBase
     }
 
     #endregion
+
+    #region ConvertToAllowedRelation Edge Cases
+
+    [Test]
+    public void ConvertToAllowedRelation_Should_Throw_For_Invalid_Enum_Value()
+    {
+        var invalidRelation = (TemporalRelation)999;
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            MatchTemporal.ConvertToAllowedRelation(invalidRelation));
+    }
+
+    #endregion
+
+    #region Specific Relation Filters for Coverage
+
+    [Test]
+    public void OnlyMetBy_Should_Match_When_Anchor_Starts_At_Candidate_End()
+    {
+        var policy = new MatchPolicy
+        {
+            AllowedTemporalRelations = AllowedRelations.MetBy,
+            InputOrdering = InputOrdering.None
+        };
+
+        // Anchor [20, 30] is MetBy candidate [10, 20]
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((20, 30));
+        ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals((10, 20));
+
+        var buffer = new MatchPair<TestInterval, TestInterval>[10];
+        var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+
+        MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref visitor);
+
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
+        Assert.That(buffer[0].Relation, Is.EqualTo(TemporalRelation.MetBy));
+    }
+
+    [Test]
+    public void OnlyOverlappedBy_Should_Match_When_Candidate_Overlaps_Anchor_From_Before()
+    {
+        var policy = new MatchPolicy
+        {
+            AllowedTemporalRelations = AllowedRelations.OverlappedBy,
+            InputOrdering = InputOrdering.None
+        };
+
+        // Anchor [20, 35] is OverlappedBy candidate [10, 25]
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((20, 35));
+        ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals((10, 25));
+
+        var buffer = new MatchPair<TestInterval, TestInterval>[10];
+        var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+
+        MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref visitor);
+
+        Assert.That(visitor.MatchCount, Is.EqualTo(1));
+        Assert.That(buffer[0].Relation, Is.EqualTo(TemporalRelation.OverlappedBy));
+    }
+
+    [Test]
+    public void AnyRelations_Should_Match_All_Intervals_With_Correct_Relations()
+    {
+        var policy = new MatchPolicy
+        {
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        // Test with multiple candidates to verify Any matches everything
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((10, 20));
+        ReadOnlySpan<TestInterval> candidates = TestDataGenerator.CreateIntervals(
+            (0, 5),    // Before (anchor is After)
+            (10, 20),  // Equal
+            (30, 40)   // After (anchor is Before)
+        );
+
+        var buffer = new MatchPair<TestInterval, TestInterval>[10];
+        var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+
+        MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref visitor);
+
+        Assert.That(visitor.MatchCount, Is.EqualTo(3));
+        Assert.That(buffer[0].Relation, Is.EqualTo(TemporalRelation.After));
+        Assert.That(buffer[1].Relation, Is.EqualTo(TemporalRelation.Equal));
+        Assert.That(buffer[2].Relation, Is.EqualTo(TemporalRelation.Before));
+    }
+
+    [Test]
+    public void AnyRelations_With_Empty_Candidates_Should_Report_Unmatched()
+    {
+        var policy = new MatchPolicy
+        {
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        ReadOnlySpan<TestInterval> anchors = TestDataGenerator.CreateIntervals((10, 20));
+        ReadOnlySpan<TestInterval> candidates = ReadOnlySpan<TestInterval>.Empty;
+
+        var buffer = new MatchPair<TestInterval, TestInterval>[10];
+        var visitor = new BufferVisitor<TestInterval, TestInterval>(buffer);
+
+        MatchTemporal.Intervals.With.Intervals(anchors, candidates, policy, ref visitor);
+
+        Assert.That(visitor.MatchCount, Is.EqualTo(0));
+        Assert.That(visitor.UnmatchedCount, Is.EqualTo(1));
+    }
+
+    #endregion
 }

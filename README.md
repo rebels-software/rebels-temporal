@@ -1,6 +1,6 @@
 # Rebels.Temporal
 
-[![Build](https://github.com/rebels-software/rebels-temporal/actions/workflows/dotnet-library-build.yml/badge.svg)](https://github.com/rebels-software/rebels-temporal/actions/workflows/dotnet-library-build.yml)
+[![Build](https://github.com/rebels-software/rebels-temporal/actions/workflows/main.yml/badge.svg)](https://github.com/rebels-software/rebels-temporal/actions/workflows/main.yml)
 
 [![codecov](https://codecov.io/gh/rebels-software/rebels-temporal/graph/badge.svg)](https://codecov.io/gh/rebels-software/rebels-temporal)
 
