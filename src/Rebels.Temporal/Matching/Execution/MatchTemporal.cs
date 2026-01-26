@@ -541,7 +541,7 @@ public static class MatchTemporal
     /// <summary>
     /// Converts a TemporalRelation enum to its corresponding AllowedRelations flag.
     /// </summary>
-    private static AllowedRelations ConvertToAllowedRelation(TemporalRelation relation)
+    internal static AllowedRelations ConvertToAllowedRelation(TemporalRelation relation)
     {
         return relation switch
         {
@@ -558,7 +558,7 @@ public static class MatchTemporal
             TemporalRelation.StartedBy => AllowedRelations.StartedBy,
             TemporalRelation.Contains => AllowedRelations.Contains,
             TemporalRelation.FinishedBy => AllowedRelations.FinishedBy,
-            _ => AllowedRelations.None
+            _ => throw new ArgumentOutOfRangeException(nameof(relation), relation, "Unknown temporal relation")
         };
     }
 
