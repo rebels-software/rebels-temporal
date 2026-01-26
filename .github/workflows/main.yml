@@ -1,8 +1,9 @@
 ﻿name: Build, test and publish
 
 on:
+  workflow_dispatch:
   push:
-    branches: ['**']
+    branches: [main]
     tags: ['v*']
   pull_request:
     branches: [main]

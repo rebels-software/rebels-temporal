@@ -5,13 +5,22 @@
     <LangVersion>13</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	<RootNamespace>Rebels.Temporal</RootNamespace>
-	<AssemblyName>Rebels.Temporal</AssemblyName>
-    <Version>1.0.0</Version>
+    <RootNamespace>Rebels.Temporal</RootNamespace>
+    <AssemblyName>Rebels.Temporal</AssemblyName>
+    <Version>1.0.1</Version>
+
+    <!-- NuGet Package -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Rebels.Temporal.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
