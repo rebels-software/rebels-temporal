@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Rebels.Temporal</RootNamespace>
     <AssemblyName>Rebels.Temporal</AssemblyName>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
 
     <!-- NuGet Package -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
