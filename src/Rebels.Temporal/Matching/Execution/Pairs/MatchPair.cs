@@ -42,8 +42,8 @@ public readonly struct MatchPair<TAnchor, TCandidate>
     public MatchType MatchType { get; }
 
     /// <summary>
-    /// Optional temporal relation describing how the intervals relate
-    /// (only applies when MatchType = IntervalRelation).
+    /// The temporal relation describing how the intervals relate.
+    /// Only populated when <see cref="MatchType"/> is <see cref="Rebels.Temporal.MatchType.Interval"/>.
     /// </summary>
     public TemporalRelation? Relation { get; }
 
@@ -61,11 +61,11 @@ public readonly struct MatchPair<TAnchor, TCandidate>
                 nameof(relation));
         }
 
-        // Validate: IntervalOverlap must have a relation
+        // Validate: Interval must have a relation
         if (matchType == MatchType.Interval && !relation.HasValue)
         {
             throw new ArgumentException(
-                "MatchType IntervalOverlap requires a temporal relation to be specified.",
+                "MatchType Interval requires a temporal relation to be specified.",
                 nameof(relation));
         }
 
