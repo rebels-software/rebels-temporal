@@ -379,18 +379,22 @@ public static class MatchTemporal
         where TVisitor : IMatchVisitor<TAnchor, TCandidate>, allows ref struct
     {
         var allowedRelations = policy.AllowedTemporalRelations;
+        var anchorTolerance = policy.AnchorTolerance;
 
         if (allowedRelations == AllowedRelations.Any)
         {
             for (int i = 0; i < anchors.Length; i++)
             {
                 var anchor = anchors[i];
+                // Apply tolerance: expand anchor interval
+                var expandedStart = anchor.Start - anchorTolerance.Before;
+                var expandedEnd = anchor.End + anchorTolerance.After;
 
                 for (int j = 0; j < candidates.Length; j++)
                 {
                     var candidate = candidates[j];
                     var relation = DetermineAllenRelation(
-                        anchor.Start, anchor.End,
+                        expandedStart, expandedEnd,
                         candidate.Start, candidate.End);
 
                     visitor.OnMatch(in anchor, in candidate, i, j, MatchType.Interval, relation);
@@ -409,13 +413,16 @@ public static class MatchTemporal
             for (int i = 0; i < anchors.Length; i++)
             {
                 var anchor = anchors[i];
+                // Apply tolerance: expand anchor interval
+                var expandedStart = anchor.Start - anchorTolerance.Before;
+                var expandedEnd = anchor.End + anchorTolerance.After;
                 bool anchorMatched = false;
 
                 for (int j = 0; j < candidates.Length; j++)
                 {
                     var candidate = candidates[j];
                     var relation = DetermineAllenRelation(
-                        anchor.Start, anchor.End,
+                        expandedStart, expandedEnd,
                         candidate.Start, candidate.End);
 
                     if (IsRelationAllowed(relation, allowedRelations))

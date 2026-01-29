@@ -19,11 +19,10 @@ namespace Rebels.Temporal;
 /// in ascending temporal order.
 /// </summary>
 /// <remarks>
-/// This information is used at compile time by source generators
-/// to select and generate the most efficient matching algorithm.
-///
-/// The ordering applies to the collections as they are passed
-/// to the matcher method (anchors first, candidates second).
+/// This information is used at runtime to select the most efficient
+/// matching algorithm. When both collections are sorted, O(n+m) dual-pointer
+/// algorithms are used. When only candidates are sorted, O(n log m) binary
+/// search is used. Otherwise, O(n×m) nested loops are used.
 /// </remarks>
 public enum InputOrdering
 {

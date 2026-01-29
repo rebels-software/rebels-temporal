@@ -380,4 +380,156 @@ public class ToleranceTests : MatchingTestBase
     }
 
     #endregion
+
+    #region Interval-to-Interval Tolerance - ForwardOnly
+
+    [TestCase(0, 10, 15, 25, 10, TemporalRelation.Overlaps, Description = "ForwardOnly extends End: Before->Overlaps")]
+    [TestCase(0, 10, 10, 20, 5, TemporalRelation.Overlaps, Description = "ForwardOnly: Meets->Overlaps")]
+    [TestCase(0, 10, 20, 30, 15, TemporalRelation.Overlaps, Description = "ForwardOnly large tolerance: Before->Overlaps")]
+    [TestCase(10, 20, 0, 5, 5, TemporalRelation.After, Description = "ForwardOnly does not extend Start: still After")]
+    [TestCase(0, 10, 5, 15, 10, TemporalRelation.Contains, Description = "ForwardOnly: Overlaps->Contains")]
+    public void IntervalToInterval_ForwardOnly_Tests(
+        int anchorStart, int anchorEnd,
+        int candidateStart, int candidateEnd,
+        int toleranceSeconds,
+        TemporalRelation expectedRelation)
+    {
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.ForwardOnly(TimeSpan.FromSeconds(toleranceSeconds)),
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorIntervals((anchorStart, anchorEnd))
+            .CandidateIntervals((candidateStart, candidateEnd))
+        .When
+            .MatchIntervalToIntervalIsCalled(policy)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(expectedRelation);
+    }
+
+    #endregion
+
+    #region Interval-to-Interval Tolerance - BackwardOnly
+
+    [TestCase(20, 30, 5, 15, 10, TemporalRelation.OverlappedBy, Description = "BackwardOnly extends Start: After->OverlappedBy")]
+    [TestCase(10, 20, 0, 10, 5, TemporalRelation.OverlappedBy, Description = "BackwardOnly: MetBy->OverlappedBy")]
+    [TestCase(20, 30, 0, 10, 15, TemporalRelation.OverlappedBy, Description = "BackwardOnly large tolerance: After->OverlappedBy")]
+    [TestCase(0, 10, 15, 25, 5, TemporalRelation.Before, Description = "BackwardOnly does not extend End: still Before")]
+    [TestCase(10, 20, 5, 25, 10, TemporalRelation.Overlaps, Description = "BackwardOnly: [0,20] vs [5,25] = Overlaps")]
+    public void IntervalToInterval_BackwardOnly_Tests(
+        int anchorStart, int anchorEnd,
+        int candidateStart, int candidateEnd,
+        int toleranceSeconds,
+        TemporalRelation expectedRelation)
+    {
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.BackwardOnly(TimeSpan.FromSeconds(toleranceSeconds)),
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorIntervals((anchorStart, anchorEnd))
+            .CandidateIntervals((candidateStart, candidateEnd))
+        .When
+            .MatchIntervalToIntervalIsCalled(policy)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(expectedRelation);
+    }
+
+    #endregion
+
+    #region Interval-to-Interval Tolerance - Symmetric
+
+    [TestCase(10, 20, 5, 15, 10, TemporalRelation.Contains, Description = "Symmetric: [0,30] contains [5,15]")]
+    [TestCase(10, 20, 25, 35, 10, TemporalRelation.Overlaps, Description = "Symmetric: [0,30] overlaps [25,35]")]
+    [TestCase(10, 20, 0, 30, 5, TemporalRelation.During, Description = "Symmetric: [5,25] during [0,30]")]
+    [TestCase(10, 20, 10, 20, 0, TemporalRelation.Equal, Description = "Zero tolerance on Equal stays Equal")]
+    [TestCase(15, 25, 0, 10, 10, TemporalRelation.OverlappedBy, Description = "Symmetric: [5,35] overlappedBy [0,10]")]
+    public void IntervalToInterval_Symmetric_Tests(
+        int anchorStart, int anchorEnd,
+        int candidateStart, int candidateEnd,
+        int toleranceSeconds,
+        TemporalRelation expectedRelation)
+    {
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = TimeTolerance.Symmetric(TimeSpan.FromSeconds(toleranceSeconds)),
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorIntervals((anchorStart, anchorEnd))
+            .CandidateIntervals((candidateStart, candidateEnd))
+        .When
+            .MatchIntervalToIntervalIsCalled(policy)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(expectedRelation);
+    }
+
+    #endregion
+
+    #region Interval-to-Interval Tolerance - Asymmetric
+
+    [TestCase(20, 30, 5, 15, 20, 5, TemporalRelation.Contains, Description = "Asymmetric 20s before, 5s after: [0,35] contains [5,15]")]
+    [TestCase(10, 20, 0, 5, 5, 20, TemporalRelation.MetBy, Description = "Asymmetric: [5,40] metBy [0,5]")]
+    [TestCase(10, 20, 25, 35, 0, 10, TemporalRelation.Overlaps, Description = "Asymmetric 0s before, 10s after: [10,30] overlaps [25,35]")]
+    [TestCase(20, 30, 5, 15, 10, 0, TemporalRelation.OverlappedBy, Description = "Asymmetric 10s before, 0s after: [10,30] overlappedBy [5,15]")]
+    public void IntervalToInterval_Asymmetric_Tests(
+        int anchorStart, int anchorEnd,
+        int candidateStart, int candidateEnd,
+        int toleranceBefore, int toleranceAfter,
+        TemporalRelation expectedRelation)
+    {
+        var policy = new MatchPolicy
+        {
+            AnchorTolerance = new TimeTolerance(
+                TimeSpan.FromSeconds(toleranceBefore),
+                TimeSpan.FromSeconds(toleranceAfter)),
+            AllowedTemporalRelations = AllowedRelations.Any,
+            InputOrdering = InputOrdering.None
+        };
+
+        Given
+            .AnchorIntervals((anchorStart, anchorEnd))
+            .CandidateIntervals((candidateStart, candidateEnd))
+        .When
+            .MatchIntervalToIntervalIsCalled(policy)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(expectedRelation);
+    }
+
+    #endregion
+
+    #region Interval-to-Interval Tolerance - Zero (unchanged behavior)
+
+    [TestCase(0, 10, 10, 20, TemporalRelation.Meets, Description = "Zero tolerance: exact Meets")]
+    [TestCase(0, 10, 20, 30, TemporalRelation.Before, Description = "Zero tolerance: exact Before")]
+    [TestCase(10, 20, 10, 20, TemporalRelation.Equal, Description = "Zero tolerance: exact Equal")]
+    [TestCase(5, 15, 0, 20, TemporalRelation.During, Description = "Zero tolerance: exact During")]
+    public void IntervalToInterval_ZeroTolerance_Tests(
+        int anchorStart, int anchorEnd,
+        int candidateStart, int candidateEnd,
+        TemporalRelation expectedRelation)
+    {
+        Given
+            .AnchorIntervals((anchorStart, anchorEnd))
+            .CandidateIntervals((candidateStart, candidateEnd))
+        .When
+            .MatchIntervalToIntervalIsCalled(TestPolicies.ExactMatch)
+        .Then
+            .TotalMatchCount(1)
+            .MatchHasRelation(expectedRelation);
+    }
+
+    #endregion
 }
